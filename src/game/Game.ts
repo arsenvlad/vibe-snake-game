@@ -42,9 +42,10 @@ export class Game {
 
     setSpeed(speedPercent: number) {
         // Speed range: 0% = 250ms (slowest), 75% = 100ms (default), 100% = 50ms (fastest)
+        const clampedSpeed = Math.max(0, Math.min(100, speedPercent));
         const minInterval = 50;  // Fastest speed
         const maxInterval = 250; // Slowest speed
-        this.baseDropInterval = maxInterval - (speedPercent / 100) * (maxInterval - minInterval);
+        this.baseDropInterval = maxInterval - (clampedSpeed / 100) * (maxInterval - minInterval);
     }
 
     private bindEvents() {

@@ -25,8 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const applySpeed = (speedPercent: number) => {
-    game.setSpeed(speedPercent);
-    localStorage.setItem('vibe-snake-speed', speedPercent.toString());
+    const clampedSpeed = Math.max(0, Math.min(100, speedPercent));
+    game.setSpeed(clampedSpeed);
+    localStorage.setItem('vibe-snake-speed', clampedSpeed.toString());
   };
 
   const savedTheme = (localStorage.getItem('vibe-snake-theme') as ThemeName) || defaultTheme;
