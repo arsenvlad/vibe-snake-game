@@ -27,6 +27,7 @@ export class Game {
         this.renderer = new Renderer(canvas, this.gridSize);
         this.gridWidth = canvas.width / this.gridSize;
         this.gridHeight = canvas.height / this.gridSize;
+        console.log('Game constructed. Grid:', this.gridWidth, this.gridHeight);
 
         this.bindEvents();
         this.reset();
@@ -50,14 +51,16 @@ export class Game {
     }
 
     start() {
+        console.log('Game starting... V2');
         this.reset();
         this.isRunning = true;
-        this.lastTime = 0;
+        this.lastTime = performance.now();
         this.dropCounter = 0;
-        this.update();
+        requestAnimationFrame((t) => this.update(t));
     }
 
     reset() {
+        console.log('Game resetting...');
         this.score = 0;
         this.updateScore();
         this.snake = new Snake(this.gridWidth, this.gridHeight);
@@ -81,7 +84,7 @@ export class Game {
     update(time: number = 0) {
         if (!this.isRunning) return;
 
-        const deltaTime = time - this.lastTime;
+        const deltaTime = Math.min(time - this.lastTime, 100); // Clamp to 100ms max to prevent spiral
         this.lastTime = time;
         this.dropCounter += deltaTime;
 
@@ -107,6 +110,7 @@ export class Game {
 
         // Collision checks
         if (this.snake.checkCollision()) {
+            console.log('Collision detected!', this.snake.head);
             this.gameOver();
             return;
         }

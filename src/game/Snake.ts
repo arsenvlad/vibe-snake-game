@@ -31,6 +31,7 @@ export class Snake {
             x: head.x + this.direction.x,
             y: head.y + this.direction.y
         };
+        console.log('Snake moving from', head, 'to', newHead, 'Direction:', this.direction);
 
         // Wrap around logic (optional, but let's do wall collision for now as per standard snake)
         // Actually, Copilot is helpful, maybe it wraps? Let's stick to walls = death for challenge.
