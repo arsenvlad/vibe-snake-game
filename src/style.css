@@ -1,0 +1,129 @@
+:root {
+  --bg-color: #0d1117;
+  /* Dark GitHub/Copilot bg */
+  --text-color: #ffffff;
+  --copilot-primary: #238636;
+  /* Fallback */
+  --copilot-gradient: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  /* Indigo to Pink */
+  --grid-color: #21262d;
+  --ui-bg: rgba(22, 27, 34, 0.9);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app {
+  position: relative;
+  box-shadow: 0 0 50px rgba(168, 85, 247, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  background-color: #010409;
+}
+
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.score-board {
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  background: var(--ui-bg);
+  padding: 10px 20px;
+  border-radius: 20px;
+  align-self: flex-start;
+  border: 1px solid #30363d;
+  backdrop-filter: blur(5px);
+}
+
+.start-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: var(--ui-bg);
+  padding: 40px;
+  border-radius: 16px;
+  border: 1px solid #30363d;
+  pointer-events: auto;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.start-screen h1 {
+  margin: 0 0 20px;
+  font-size: 48px;
+  background: var(--copilot-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn {
+  background: var(--copilot-gradient);
+  border: none;
+  padding: 12px 32px;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.controls-hint {
+  margin-top: 20px;
+  color: #8b949e;
+  font-size: 14px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.auto-badge {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: var(--copilot-gradient);
+  padding: 5px 15px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.auto-badge.active {
+  opacity: 1;
+}

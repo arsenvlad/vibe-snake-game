@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="stylesheet" href="/src/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copilot Snake</title>
+</head>
+
+<body>
+  <div id="app">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div id="ui-layer" class="ui-overlay">
+      <div class="score-board">Score: <span id="score">0</span></div>
+      <div id="auto-badge" class="auto-badge">AUTO PILOT ACTIVE</div>
+    </div>
+
+    <div id="start-screen" class="start-screen">
+      <h1>Copilot Snake</h1>
+      <p>Use Arrow Keys to Move</p>
+      <p>Press 'A' for Auto Pilot</p>
+      <button id="start-btn" class="btn">Start Game</button>
+    </div>
+
+    <div id="game-over-screen" class="start-screen hidden">
+      <h1>Game Over</h1>
+      <p>Score: <span id="final-score">0</span></p>
+      <button id="restart-btn" class="btn">Play Again</button>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
