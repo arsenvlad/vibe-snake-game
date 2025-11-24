@@ -14,7 +14,16 @@
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
     <div id="ui-layer" class="ui-overlay">
-      <div class="score-board">Score: <span id="score">0</span></div>
+      <div class="top-bar">
+        <div class="score-board">Score: <span id="score">0</span></div>
+        <div class="theme-switcher">
+          <label for="theme-select">Theme</label>
+          <select id="theme-select" name="theme-select">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+      </div>
       <div id="auto-badge" class="auto-badge">AUTO PILOT ACTIVE</div>
     </div>
 

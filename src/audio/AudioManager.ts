@@ -1,5 +1,5 @@
 export class AudioManager {
-    private ctx: AudioContext
+    private ctx!: AudioContext
     private enabled: boolean = true
 
     constructor() {

@@ -2,9 +2,10 @@ import { Renderer } from './Renderer';
 import { Snake } from './Snake';
 import { Food } from './Food';
 import { AutoPilot } from './AutoPilot';
+import type { ThemeName } from './themes';
+import { themes, defaultTheme } from './themes';
 
 export class Game {
-    private canvas: HTMLCanvasElement;
     private renderer: Renderer;
     private snake!: Snake;
     private food!: Food;
@@ -21,16 +22,22 @@ export class Game {
     private gridSize: number = 20;
     private gridWidth: number;
     private gridHeight: number;
+    private currentTheme: ThemeName = defaultTheme;
 
     constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
-        this.renderer = new Renderer(canvas, this.gridSize);
+        this.renderer = new Renderer(canvas, this.gridSize, themes[this.currentTheme]);
         this.gridWidth = canvas.width / this.gridSize;
         this.gridHeight = canvas.height / this.gridSize;
         console.log('Game constructed. Grid:', this.gridWidth, this.gridHeight);
 
         this.bindEvents();
         this.reset();
+    }
+
+    setTheme(theme: ThemeName) {
+        this.currentTheme = theme;
+        this.renderer.setTheme(themes[theme]);
+        this.draw();
     }
 
     private bindEvents() {

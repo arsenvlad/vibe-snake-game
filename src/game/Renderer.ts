@@ -1,25 +1,30 @@
-import { Snake } from './Snake';
-import { Food } from './Food';
+import type { ThemeColors } from './themes';
 
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private width: number;
     private height: number;
     private gridSize: number;
+    private colors: ThemeColors;
 
-    constructor(canvas: HTMLCanvasElement, gridSize: number) {
+    constructor(canvas: HTMLCanvasElement, gridSize: number, colors: ThemeColors) {
         this.ctx = canvas.getContext('2d')!;
         this.width = canvas.width;
         this.height = canvas.height;
         this.gridSize = gridSize;
+        this.colors = colors;
+    }
+
+    setTheme(colors: ThemeColors) {
+        this.colors = colors;
     }
 
     clear() {
-        this.ctx.fillStyle = '#0d1117';
+        this.ctx.fillStyle = this.colors.canvasBg;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Draw subtle grid
-        this.ctx.strokeStyle = '#21262d';
+        this.ctx.strokeStyle = this.colors.gridColor;
         this.ctx.lineWidth = 1;
 
         for (let x = 0; x <= this.width; x += this.gridSize) {
@@ -50,11 +55,11 @@ export class Renderer {
             );
 
             if (isHead) {
-                gradient.addColorStop(0, '#ffffff');
-                gradient.addColorStop(1, '#6366f1');
+                gradient.addColorStop(0, this.colors.snakeHeadStart);
+                gradient.addColorStop(1, this.colors.snakeHeadEnd);
             } else {
-                gradient.addColorStop(0, '#6366f1');
-                gradient.addColorStop(1, '#ec4899');
+                gradient.addColorStop(0, this.colors.snakeBodyStart);
+                gradient.addColorStop(1, this.colors.snakeBodyEnd);
             }
 
             this.ctx.fillStyle = gradient;
@@ -91,8 +96,8 @@ export class Renderer {
 
     drawFood(x: number, y: number) {
         this.ctx.shadowBlur = 15;
-        this.ctx.shadowColor = '#238636';
-        this.ctx.fillStyle = '#238636'; // GitHub Green
+        this.ctx.shadowColor = this.colors.foodGlow;
+        this.ctx.fillStyle = this.colors.foodColor;
 
         this.ctx.beginPath();
         this.ctx.arc(
