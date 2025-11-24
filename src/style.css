@@ -37,7 +37,8 @@ body {
   min-height: 100vh;
   gap: 24px;
   padding: 32px 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   user-select: none;
 }
 
