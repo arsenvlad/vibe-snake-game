@@ -68,7 +68,14 @@ body {
   text-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
 }
 
-#app {
+.game-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.canvas-wrapper {
   position: relative;
   box-shadow: 0 0 50px rgba(168, 85, 247, 0.2);
   border-radius: 12px;
@@ -89,18 +96,18 @@ canvas {
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 20px;
+  justify-content: center;
+  align-items: center;
   box-sizing: border-box;
 }
 
 .top-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  width: 100%;
-  pointer-events: auto;
+  width: 600px;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .controls-group {
@@ -168,7 +175,6 @@ canvas {
   background: var(--ui-bg);
   padding: 10px 20px;
   border-radius: 20px;
-  align-self: flex-start;
   border: 1px solid var(--border-color);
   backdrop-filter: blur(5px);
 }
@@ -254,7 +260,7 @@ canvas {
 
 .auto-badge {
   position: absolute;
-  bottom: 20px;
+  top: 20px;
   right: 20px;
   background: var(--copilot-gradient);
   padding: 5px 15px;
@@ -263,6 +269,7 @@ canvas {
   font-weight: bold;
   opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none;
 }
 
 .auto-badge.active {
