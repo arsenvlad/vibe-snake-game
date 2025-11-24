@@ -12,7 +12,7 @@ export class Game {
     private autoPilot!: AutoPilot;
 
     private lastTime: number = 0;
-    private dropInterval: number = 100; // Speed
+    private baseDropInterval: number = 100; // Base speed at 75% slider position
     private dropCounter: number = 0;
 
     private isRunning: boolean = false;
@@ -38,6 +38,14 @@ export class Game {
         this.currentTheme = theme;
         this.renderer.setTheme(themes[theme]);
         this.draw();
+    }
+
+    setSpeed(speedPercent: number) {
+        // Speed range: 0% = 250ms (slowest), 75% = 100ms (default), 100% = 50ms (fastest)
+        const clampedSpeed = Math.max(0, Math.min(100, speedPercent));
+        const minInterval = 50;  // Fastest speed
+        const maxInterval = 250; // Slowest speed
+        this.baseDropInterval = maxInterval - (clampedSpeed / 100) * (maxInterval - minInterval);
     }
 
     private bindEvents() {
@@ -103,7 +111,7 @@ export class Game {
         this.dropCounter += deltaTime;
 
         // Speed up as score increases
-        const currentInterval = Math.max(50, this.dropInterval - this.score * 2);
+        const currentInterval = Math.max(50, this.baseDropInterval - this.score * 2);
 
         if (this.dropCounter > currentInterval) {
             this.step();

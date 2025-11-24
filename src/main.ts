@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
   const game = new Game(canvas);
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
+  const speedSlider = document.getElementById('speed-slider') as HTMLInputElement | null;
 
   const startBtn = document.getElementById('start-btn');
   const restartBtn = document.getElementById('restart-btn');
@@ -23,8 +24,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const applySpeed = (speedPercent: number) => {
+    const clampedSpeed = Math.max(0, Math.min(100, speedPercent));
+    game.setSpeed(clampedSpeed);
+    localStorage.setItem('vibe-snake-speed', clampedSpeed.toString());
+  };
+
   const savedTheme = (localStorage.getItem('vibe-snake-theme') as ThemeName) || defaultTheme;
   applyTheme(savedTheme);
+
+  // Load saved speed or default to 75%
+  const savedSpeed = localStorage.getItem('vibe-snake-speed');
+  const initialSpeed = savedSpeed ? parseInt(savedSpeed, 10) : 75;
+  applySpeed(initialSpeed);
+  if (speedSlider) {
+    speedSlider.value = initialSpeed.toString();
+  }
 
   startBtn?.addEventListener('click', () => {
     startScreen?.classList.add('hidden');
@@ -39,5 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
   themeSelect?.addEventListener('change', (event) => {
     const target = event.target as HTMLSelectElement;
     applyTheme(target.value as ThemeName);
+  });
+
+  speedSlider?.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement;
+    applySpeed(parseInt(target.value, 10));
   });
 });
