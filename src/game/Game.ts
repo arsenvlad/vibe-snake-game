@@ -42,7 +42,14 @@ export class Game {
 
     private bindEvents() {
         window.addEventListener('keydown', (e) => {
-            if (!this.isRunning) return;
+            const arrowKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
+            if (arrowKeys.has(e.key)) {
+                e.preventDefault();
+                if (!this.isRunning) return;
+            } else if (!this.isRunning) {
+                return;
+            }
 
             switch (e.key) {
                 case 'ArrowUp': this.snake.setDirection({ x: 0, y: -1 }); break;
