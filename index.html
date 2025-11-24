@@ -10,8 +10,10 @@
 </head>
 
 <body>
-  <div id="app">
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div class="page">
+    <header class="page-header">
+      <h1 class="game-title">Snake Game</h1>
+    </header>
 
     <div id="ui-layer" class="ui-overlay">
       <div class="top-bar">
@@ -29,21 +31,21 @@
             </select>
           </div>
         </div>
+        <div id="auto-badge" class="auto-badge">AUTO PILOT ACTIVE</div>
       </div>
-      <div id="auto-badge" class="auto-badge">AUTO PILOT ACTIVE</div>
-    </div>
 
-    <div id="start-screen" class="start-screen">
-      <h1>Snake Game</h1>
-      <p>Use Arrow Keys to Move</p>
-      <p>Press 'A' for Auto Pilot</p>
-      <button id="start-btn" class="btn">Start Game</button>
-    </div>
+      <div id="start-screen" class="start-screen">
+        <h1>Snake Game</h1>
+        <p>Use Arrow Keys to Move</p>
+        <p>Press 'A' for Auto Pilot</p>
+        <button id="start-btn" class="btn">Start Game</button>
+      </div>
 
-    <div id="game-over-screen" class="start-screen hidden">
-      <h1>Game Over</h1>
-      <p>Score: <span id="final-score">0</span></p>
-      <button id="restart-btn" class="btn">Play Again</button>
+      <div id="game-over-screen" class="start-screen hidden">
+        <h1>Game Over</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <button id="restart-btn" class="btn">Play Again</button>
+      </div>
     </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
