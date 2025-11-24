@@ -9,7 +9,6 @@ export class AutoPilot {
     private food: Food;
     private gridWidth: number = 0;
     private gridHeight: number = 0;
-    private gridSize: number = 20;
 
     constructor(snake: Snake, food: Food, gridWidth: number, gridHeight: number) {
         this.snake = snake;
