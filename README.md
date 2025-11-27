@@ -46,7 +46,7 @@ npm run preview
 - Use **Arrow Keys** to control the snake's direction
 - Eat food to grow longer and increase your score
 - Press **'A'** to toggle Auto Pilot mode (watch the AI play!)
-- Switch between **Dark**, **Light**, or **Green** themes from the selector
+- Switch between **Dark**, **Light**, **Green**, **Red**, or **Blue** themes from the selector
 - Avoid hitting the walls or yourself
 
 ## Game Structure
@@ -67,6 +67,7 @@ This game was created using a combination of AI coding agents:
 - **Google Antigravity**
 - **OpenAI Codex**
 - **GitHub Copilot**
+- **Cursor**
 
 ## License
 
