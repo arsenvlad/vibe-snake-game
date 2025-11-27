@@ -25,6 +25,18 @@
   --muted-text: #475569;
 }
 
+:root[data-theme='green'] {
+  --bg-color: #0c1f1a;
+  --text-color: #e0f2f1;
+  --copilot-primary: #22c55e;
+  --copilot-gradient: linear-gradient(135deg, #22c55e, #16a34a, #84cc16);
+  --grid-color: #184035;
+  --canvas-bg: #0b2f26;
+  --ui-bg: rgba(10, 37, 31, 0.9);
+  --border-color: #1f3d32;
+  --muted-text: #94b8ab;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-color);

@@ -1,4 +1,4 @@
-export type ThemeName = 'dark' | 'light';
+export type ThemeName = 'dark' | 'light' | 'green';
 
 export interface ThemeColors {
     canvasBg: string;
@@ -31,6 +31,16 @@ export const themes: Record<ThemeName, ThemeColors> = {
         snakeBodyEnd: '#f472b6',
         foodColor: '#16a34a',
         foodGlow: '#22c55e'
+    },
+    green: {
+        canvasBg: '#0b2f26',
+        gridColor: '#184035',
+        snakeHeadStart: '#d1fae5',
+        snakeHeadEnd: '#10b981',
+        snakeBodyStart: '#22c55e',
+        snakeBodyEnd: '#166534',
+        foodColor: '#bef264',
+        foodGlow: '#a3e635'
     }
 };
 
