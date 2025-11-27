@@ -18,6 +18,7 @@ export class Game {
     private dropCounter: number = 0;
 
     private isRunning: boolean = false;
+    private isPaused: boolean = false;
     private isAuto: boolean = false;
     private score: number = 0;
 
@@ -55,10 +56,18 @@ export class Game {
         window.addEventListener('keydown', (e) => {
             const arrowKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
+            // Allow pause toggle even when paused
+            if (e.key === 'p' || e.key === 'P') {
+                if (this.isRunning || this.isPaused) {
+                    this.togglePause();
+                }
+                return;
+            }
+
             if (arrowKeys.has(e.key)) {
                 e.preventDefault();
-                if (!this.isRunning) return;
-            } else if (!this.isRunning) {
+                if (!this.isRunning || this.isPaused) return;
+            } else if (!this.isRunning || this.isPaused) {
                 return;
             }
 
@@ -79,6 +88,8 @@ export class Game {
         console.log('Game starting... V2');
         this.reset();
         this.isRunning = true;
+        this.isPaused = false;
+        this.updatePauseBadge();
         this.lastTime = performance.now();
         this.dropCounter = 0;
         requestAnimationFrame((t) => this.update(t));
@@ -106,8 +117,30 @@ export class Game {
         }
     }
 
+    togglePause() {
+        if (!this.isRunning && !this.isPaused) return;
+        
+        this.isPaused = !this.isPaused;
+        this.updatePauseBadge();
+        
+        if (!this.isPaused) {
+            // Resuming - reset timing to prevent jump
+            this.lastTime = performance.now();
+            this.dropCounter = 0;
+            requestAnimationFrame((t) => this.update(t));
+        }
+    }
+
+    private updatePauseBadge() {
+        const badge = document.getElementById('pause-badge');
+        if (badge) {
+            if (this.isPaused) badge.classList.add('active');
+            else badge.classList.remove('active');
+        }
+    }
+
     update(time: number = 0) {
-        if (!this.isRunning) return;
+        if (!this.isRunning || this.isPaused) return;
 
         const deltaTime = Math.min(time - this.lastTime, 100); // Clamp to 100ms max to prevent spiral
         this.lastTime = time;
