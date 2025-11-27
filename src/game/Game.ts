@@ -159,6 +159,14 @@ export class Game {
 
     gameOver() {
         this.isRunning = false;
+
+        if (this.isAuto) {
+            setTimeout(() => {
+                this.start();
+            }, 1000);
+            return;
+        }
+
         const screen = document.getElementById('game-over-screen');
         const finalScore = document.getElementById('final-score');
         if (screen && finalScore) {
