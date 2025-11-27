@@ -21,6 +21,8 @@ export class Game {
     private isPaused: boolean = false;
     private isAuto: boolean = false;
     private score: number = 0;
+    private highScore: number = 0;
+    private readonly highScoreKey: string = 'vibe-snake-high-score';
 
     private gridSize: number = 20;
     private gridWidth: number;
@@ -32,6 +34,8 @@ export class Game {
         this.audio = new AudioManager();
         this.gridWidth = canvas.width / this.gridSize;
         this.gridHeight = canvas.height / this.gridSize;
+        this.highScore = this.loadHighScore();
+        this.updateHighScoreDisplay();
         console.log('Game constructed. Grid:', this.gridWidth, this.gridHeight);
 
         this.bindEvents();
@@ -179,6 +183,7 @@ export class Game {
             this.food.respawn(this.snake.segments);
             this.score += 10;
             this.updateScore();
+            this.tryUpdateHighScore();
             this.audio.play('eat');
         }
     }
@@ -192,6 +197,31 @@ export class Game {
     updateScore() {
         const el = document.getElementById('score');
         if (el) el.innerText = this.score.toString();
+    }
+
+    private loadHighScore(): number {
+        if (typeof localStorage === 'undefined') return 0;
+        const stored = localStorage.getItem(this.highScoreKey);
+        if (!stored) return 0;
+        const parsed = parseInt(stored, 10);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    private persistHighScore() {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(this.highScoreKey, this.highScore.toString());
+    }
+
+    private updateHighScoreDisplay() {
+        const el = document.getElementById('high-score');
+        if (el) el.innerText = this.highScore.toString();
+    }
+
+    private tryUpdateHighScore() {
+        if (this.score <= this.highScore) return;
+        this.highScore = this.score;
+        this.persistHighScore();
+        this.updateHighScoreDisplay();
     }
 
     gameOver() {

@@ -181,7 +181,9 @@ canvas {
 }
 
 .score-board {
-  font-size: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-weight: bold;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   background: var(--ui-bg);
@@ -189,6 +191,16 @@ canvas {
   border-radius: 20px;
   border: 1px solid var(--border-color);
   backdrop-filter: blur(5px);
+}
+
+.score-row {
+  font-size: 24px;
+}
+
+.score-row.secondary {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted-color, rgba(255, 255, 255, 0.7));
 }
 
 .theme-switcher {
