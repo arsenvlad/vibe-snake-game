@@ -36,7 +36,6 @@ export class Game {
         this.gridHeight = canvas.height / this.gridSize;
         this.highScore = this.loadHighScore();
         this.updateHighScoreDisplay();
-        console.log('Game constructed. Grid:', this.gridWidth, this.gridHeight);
 
         this.bindEvents();
         this.reset();
@@ -89,7 +88,6 @@ export class Game {
     }
 
     start() {
-        console.log('Game starting... V2');
         this.reset();
         this.isRunning = true;
         this.isPaused = false;
@@ -100,7 +98,6 @@ export class Game {
     }
 
     reset() {
-        console.log('Game resetting...');
         this.score = 0;
         this.updateScore();
         this.snake = new Snake(this.gridWidth, this.gridHeight);
@@ -172,7 +169,6 @@ export class Game {
 
         // Collision checks
         if (this.snake.checkCollision()) {
-            console.log('Collision detected!', this.snake.head);
             this.gameOver();
             return;
         }
