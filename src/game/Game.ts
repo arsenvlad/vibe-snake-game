@@ -4,12 +4,14 @@ import { Food } from './Food';
 import { AutoPilot } from './AutoPilot';
 import type { ThemeName } from './themes';
 import { themes, defaultTheme } from './themes';
+import { AudioManager } from '../audio/AudioManager';
 
 export class Game {
     private renderer: Renderer;
     private snake!: Snake;
     private food!: Food;
     private autoPilot!: AutoPilot;
+    private audio: AudioManager;
 
     private lastTime: number = 0;
     private baseDropInterval: number = 100; // Base speed at 75% slider position
@@ -26,6 +28,7 @@ export class Game {
 
     constructor(canvas: HTMLCanvasElement) {
         this.renderer = new Renderer(canvas, this.gridSize, themes[this.currentTheme]);
+        this.audio = new AudioManager();
         this.gridWidth = canvas.width / this.gridSize;
         this.gridHeight = canvas.height / this.gridSize;
         console.log('Game constructed. Grid:', this.gridWidth, this.gridHeight);
@@ -143,6 +146,7 @@ export class Game {
             this.food.respawn(this.snake.segments);
             this.score += 10;
             this.updateScore();
+            this.audio.play('eat');
         }
     }
 
@@ -159,6 +163,7 @@ export class Game {
 
     gameOver() {
         this.isRunning = false;
+        this.audio.play('die');
 
         if (this.isAuto) {
             setTimeout(() => {
