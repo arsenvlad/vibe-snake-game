@@ -1,3 +1,5 @@
+import { SeededRandom } from './SeededRandom';
+
 export type ObstacleType = 'static' | 'moving' | 'temporary';
 
 export interface ObstaclePosition {
@@ -87,10 +89,26 @@ export class ObstacleManager {
     private gridHeight: number;
     private lastSpawnScore: number = 0;
     private spawnThreshold: number = 100; // Spawn obstacles every 100 points
+    private rng: SeededRandom | null = null;
 
     constructor(gridWidth: number, gridHeight: number) {
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
+    }
+
+    private random(): number {
+        return this.rng ? this.rng.random() : Math.random();
+    }
+
+    private randomInt(max: number): number {
+        return this.rng ? this.rng.randomInt(max) : Math.floor(Math.random() * max);
+    }
+
+    /**
+     * Use a seeded RNG for deterministic obstacle behavior
+     */
+    setRng(rng: SeededRandom | null): void {
+        this.rng = rng;
     }
 
     /**
@@ -141,7 +159,7 @@ export class ObstacleManager {
                 const config: ObstacleConfig = {
                     type,
                     position,
-                    duration: type === 'temporary' ? TEMPORARY_BASE_DURATION + Math.floor(Math.random() * TEMPORARY_DURATION_VARIANCE) : undefined,
+                    duration: type === 'temporary' ? TEMPORARY_BASE_DURATION + this.randomInt(TEMPORARY_DURATION_VARIANCE) : undefined,
                     direction: type === 'moving' ? this.getRandomDirection() : undefined
                 };
                 this.obstacles.push(new Obstacle(config, this.gridWidth, this.gridHeight));
@@ -153,7 +171,7 @@ export class ObstacleManager {
      * Select obstacle type based on level (higher levels = more variety)
      */
     private selectObstacleType(level: number): ObstacleType {
-        const rand = Math.random();
+        const rand = this.random();
         
         if (level < 2) {
             return 'static';
@@ -178,7 +196,7 @@ export class ObstacleManager {
             { x: 0, y: 1 },
             { x: 0, y: -1 }
         ];
-        return directions[Math.floor(Math.random() * directions.length)];
+        return directions[this.randomInt(directions.length)];
     }
 
     /**
@@ -189,10 +207,10 @@ export class ObstacleManager {
         foodPosition: ObstaclePosition
     ): ObstaclePosition | null {
         const maxAttempts = 100;
-        
+
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            const x = Math.floor(Math.random() * this.gridWidth);
-            const y = Math.floor(Math.random() * this.gridHeight);
+            const x = this.randomInt(this.gridWidth);
+            const y = this.randomInt(this.gridHeight);
 
             // Check if position is valid
             if (!this.isPositionOccupied({ x, y }, snakeSegments, foodPosition)) {

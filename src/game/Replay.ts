@@ -332,6 +332,7 @@ export class ReplayPlayer {
 export class ReplayStorage {
     private static readonly LAST_REPLAY_KEY = 'vibe-snake-last-replay';
     private static readonly HIGH_SCORE_REPLAY_KEY = 'vibe-snake-high-score-replay';
+    private static readonly REPLAY_HISTORY_KEY = 'vibe-snake-replay-history';
 
     /**
      * Save the last game replay
@@ -388,6 +389,35 @@ export class ReplayStorage {
             return JSON.parse(stored) as ReplayData;
         } catch {
             return null;
+        }
+    }
+
+    /**
+     * Save replay to history (keeps last 10 entries)
+     */
+    static saveReplayToHistory(data: ReplayData): void {
+        if (typeof localStorage === 'undefined') return;
+        try {
+            const history = this.loadReplayHistory();
+            const newHistory = [data, ...history].slice(0, 10);
+            localStorage.setItem(this.REPLAY_HISTORY_KEY, JSON.stringify(newHistory));
+        } catch {
+            console.warn('Failed to save replay history');
+        }
+    }
+
+    /**
+     * Load replay history (latest first)
+     */
+    static loadReplayHistory(): ReplayData[] {
+        if (typeof localStorage === 'undefined') return [];
+        try {
+            const stored = localStorage.getItem(this.REPLAY_HISTORY_KEY);
+            if (!stored) return [];
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed as ReplayData[] : [];
+        } catch {
+            return [];
         }
     }
 

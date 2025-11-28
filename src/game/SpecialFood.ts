@@ -1,3 +1,5 @@
+import { SeededRandom } from './SeededRandom';
+
 export type PowerUpType = 'speed_boost' | 'slow_motion' | 'bonus_points' | 'invincibility';
 
 export interface PowerUpConfig {
@@ -53,11 +55,16 @@ export class SpecialFood {
     isActive: boolean = false;
     spawnTime: number = 0;
     animationPhase: number = 0;
+    private rng: SeededRandom | null = null;
 
     constructor(gridWidth: number, gridHeight: number) {
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.type = 'bonus_points';  // Default type
+    }
+
+    setRng(rng: SeededRandom | null) {
+        this.rng = rng;
     }
 
     getConfig(): PowerUpConfig {
@@ -68,7 +75,8 @@ export class SpecialFood {
     }
 
     shouldSpawn(): boolean {
-        return Math.random() < SPECIAL_FOOD_SPAWN_CHANCE;
+        const random = this.rng ? this.rng.random() : Math.random();
+        return random < SPECIAL_FOOD_SPAWN_CHANCE;
     }
 
     spawn(snakeSegments: { x: number, y: number }[], regularFoodX: number, regularFoodY: number): boolean {
@@ -76,7 +84,8 @@ export class SpecialFood {
 
         // Randomly select a power-up type from all available types
         const types = Object.keys(POWER_UP_CONFIGS) as PowerUpType[];
-        this.type = types[Math.floor(Math.random() * types.length)];
+        const randomIndex = this.rng ? this.rng.randomInt(types.length) : Math.floor(Math.random() * types.length);
+        this.type = types[randomIndex];
 
         // Find a valid position
         let attempts = 0;
@@ -105,6 +114,12 @@ export class SpecialFood {
     }
 
     randomize() {
+        if (this.rng) {
+            this.x = this.rng.randomInt(this.gridWidth);
+            this.y = this.rng.randomInt(this.gridHeight);
+            return;
+        }
+
         this.x = Math.floor(Math.random() * this.gridWidth);
         this.y = Math.floor(Math.random() * this.gridHeight);
     }
