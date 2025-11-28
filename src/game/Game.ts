@@ -16,12 +16,6 @@ export interface ActivePowerUp {
     duration: number;
 }
 
-export interface ActivePowerUp {
-    type: PowerUpType;
-    startTime: number;
-    duration: number;
-}
-
 export class Game {
     private renderer: Renderer;
     private snake!: Snake;
@@ -316,7 +310,6 @@ export class Game {
         this.autoPilot.setObstacles(this.obstacleManager.getObstaclePositions());
 
         if (this.isAuto && !this.isReplayMode) {
-        if (this.isAuto) {
             const nextMove = this.autoPilot.getNextMove();
             if (nextMove) this.snake.setDirection(nextMove);
         }
@@ -334,7 +327,6 @@ export class Game {
                 } else {
                     this.gameOver();
                 }
-                this.gameOver();
                 return;
             }
             // If invincible and hit wall, wrap around
@@ -348,7 +340,6 @@ export class Game {
             } else {
                 this.gameOver();
             }
-            this.gameOver();
             return;
         }
 
@@ -401,39 +392,6 @@ export class Game {
         if (!this.isReplayMode) {
             this.tryUpdateHighScore();
         }
-
-        // Play power-up sound
-        this.audio.play('powerup');
-
-        // Apply power-up effect (replaces any existing power-up)
-        if (config.duration > 0) {
-            this.activePowerUp = {
-                type: config.type,
-                startTime: performance.now(),
-                duration: config.duration
-            };
-            this.updatePowerUpHUD();
-        }
-
-        // Despawn the special food
-        this.specialFood.despawn();
-    }
-
-    private handleWrapAround() {
-        const head = this.snake.head;
-        if (head.x < 0) head.x = this.gridWidth - 1;
-        else if (head.x >= this.gridWidth) head.x = 0;
-        if (head.y < 0) head.y = this.gridHeight - 1;
-        else if (head.y >= this.gridHeight) head.y = 0;
-    }
-
-    private collectSpecialFood() {
-        const config = this.specialFood.getConfig();
-        
-        // Add points bonus
-        this.score += config.pointsBonus;
-        this.updateScore();
-        this.tryUpdateHighScore();
 
         // Play power-up sound
         this.audio.play('powerup');
