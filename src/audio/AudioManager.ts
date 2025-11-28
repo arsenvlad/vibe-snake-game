@@ -11,7 +11,7 @@ export class AudioManager {
         }
     }
 
-    public play(sound: 'eat' | 'die') {
+    public play(sound: 'eat' | 'die' | 'powerup') {
         if (!this.enabled) return
 
         // Resume context if suspended (browser policy)
@@ -45,6 +45,19 @@ export class AudioManager {
 
             osc.start()
             osc.stop(this.ctx.currentTime + 0.5)
+        } else if (sound === 'powerup') {
+            // Multi-tone arpeggio for power-up collection
+            osc.type = 'sine'
+            osc.frequency.setValueAtTime(523, this.ctx.currentTime) // C5
+            osc.frequency.setValueAtTime(659, this.ctx.currentTime + 0.08) // E5
+            osc.frequency.setValueAtTime(784, this.ctx.currentTime + 0.16) // G5
+            osc.frequency.setValueAtTime(1047, this.ctx.currentTime + 0.24) // C6
+
+            gain.gain.setValueAtTime(0.35, this.ctx.currentTime)
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35)
+
+            osc.start()
+            osc.stop(this.ctx.currentTime + 0.35)
         }
     }
 }

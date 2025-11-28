@@ -1,5 +1,6 @@
 import { Snake } from './Snake';
 import { Food } from './Food';
+import { SpecialFood } from './SpecialFood';
 
 type Point = { x: number, y: number };
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
@@ -7,12 +8,15 @@ type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 export class AutoPilot {
     private snake: Snake;
     private food: Food;
+    private specialFood: SpecialFood | null;
     private gridWidth: number = 0;
     private gridHeight: number = 0;
+    private obstaclePositions: Point[] = [];
 
-    constructor(snake: Snake, food: Food, gridWidth: number, gridHeight: number) {
+    constructor(snake: Snake, food: Food, gridWidth: number, gridHeight: number, specialFood?: SpecialFood) {
         this.snake = snake;
         this.food = food;
+        this.specialFood = specialFood || null;
         this.updateBounds(gridWidth, gridHeight);
     }
 
@@ -21,16 +25,44 @@ export class AutoPilot {
         this.gridHeight = gridHeight;
     }
 
+    public setObstacles(obstacles: Point[]) {
+        this.obstaclePositions = obstacles;
+    }
+
     public getNextMove(): { x: number, y: number } | null {
         const head = this.snake.head;
-        const foodPos = { x: this.food.x, y: this.food.y };
+        const regularFoodPos = { x: this.food.x, y: this.food.y };
         const body = this.snake.segments;
 
         // Create a grid representation for BFS
         const grid = this.createGrid(body);
 
-        // Try to find path to food
-        const path = this.bfs(head, foodPos, grid);
+        // Determine target - prioritize special food if active and reachable in time
+        let targetPos = regularFoodPos;
+        
+        if (this.specialFood?.isActive) {
+            const specialFoodPos = { x: this.specialFood.x, y: this.specialFood.y };
+            const pathToSpecial = this.bfs(head, specialFoodPos, grid);
+            
+            if (pathToSpecial && pathToSpecial.length > 0) {
+                // Estimate if we can reach the special food in time
+                // Each step takes approximately one game tick
+                const stepsToSpecial = pathToSpecial.length;
+                const currentTime = performance.now();
+                const remainingTime = this.specialFood.getRemainingTime(currentTime);
+                
+                // Estimate: each step ~100ms at default speed, add safety margin
+                const estimatedTimeToReach = stepsToSpecial * 120;
+                
+                // Prioritize special food if we can reach it with time to spare
+                if (estimatedTimeToReach < remainingTime * 0.8) {
+                    targetPos = specialFoodPos;
+                }
+            }
+        }
+
+        // Try to find path to target
+        const path = this.bfs(head, targetPos, grid);
 
         if (path && path.length > 0) {
             return this.directionToVector(this.getDirection(head, path[0]));
@@ -71,6 +103,13 @@ export class AutoPilot {
             const p = body[i];
             if (p.x >= 0 && p.x < this.gridWidth && p.y >= 0 && p.y < this.gridHeight) {
                 grid[p.x][p.y] = false;
+            }
+        }
+
+        // Mark obstacles as non-walkable
+        for (const obs of this.obstaclePositions) {
+            if (obs.x >= 0 && obs.x < this.gridWidth && obs.y >= 0 && obs.y < this.gridHeight) {
+                grid[obs.x][obs.y] = false;
             }
         }
 

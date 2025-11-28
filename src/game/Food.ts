@@ -39,11 +39,13 @@ export class Food {
         }
     }
 
-    respawn(snakeSegments: { x: number, y: number }[]) {
+    respawn(snakeSegments: { x: number, y: number }[], obstaclePositions: { x: number, y: number }[] = []) {
         let valid = false;
         while (!valid) {
             this.randomize();
-            valid = !snakeSegments.some(segment => segment.x === this.x && segment.y === this.y);
+            const overlapsSnake = snakeSegments.some(segment => segment.x === this.x && segment.y === this.y);
+            const overlapsObstacle = obstaclePositions.some(obs => obs.x === this.x && obs.y === this.y);
+            valid = !overlapsSnake && !overlapsObstacle;
         }
     }
 }
