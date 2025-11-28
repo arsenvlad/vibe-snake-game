@@ -408,6 +408,42 @@ canvas {
   opacity: 1;
 }
 
+.powerup-indicator {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.powerup-indicator.active {
+  opacity: 1;
+}
+
+.powerup-name {
+  font-weight: 600;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.powerup-timer {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
 .keyboard-legend {
   display: flex;
   justify-content: center;
