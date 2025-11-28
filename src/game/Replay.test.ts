@@ -1,6 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReplayRecorder, ReplayPlayer, ReplayStorage, type ReplayData } from './Replay';
 
+// Shared localStorage mock factory for tests
+function createLocalStorageMock() {
+    let store: Record<string, string> = {};
+    return {
+        getItem: (key: string) => store[key] ?? null,
+        setItem: (key: string, value: string) => { store[key] = value; },
+        removeItem: (key: string) => { delete store[key]; },
+        clear: () => { store = {}; }
+    };
+}
+
 describe('ReplayRecorder', () => {
     let recorder: ReplayRecorder;
 
@@ -263,16 +274,8 @@ describe('ReplayStorage', () => {
         speedPercent: 75
     };
 
-    // Mock localStorage for Node.js test environment
-    const localStorageMock = (() => {
-        let store: Record<string, string> = {};
-        return {
-            getItem: (key: string) => store[key] ?? null,
-            setItem: (key: string, value: string) => { store[key] = value; },
-            removeItem: (key: string) => { delete store[key]; },
-            clear: () => { store = {}; }
-        };
-    })();
+    // Use shared localStorage mock
+    const localStorageMock = createLocalStorageMock();
 
     beforeEach(() => {
         // Setup global localStorage mock
@@ -462,7 +465,6 @@ describe('ReplayStorage', () => {
             ReplayStorage.saveReplayToHistory(replay1);
             
             // Mock localStorage.setItem to throw an error
-            const originalSetItem = localStorage.setItem;
             vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
                 throw new Error('Storage quota exceeded');
             });
@@ -472,7 +474,6 @@ describe('ReplayStorage', () => {
             
             // Restore original setItem
             vi.mocked(localStorage.setItem).mockRestore();
-            (localStorage as { setItem: typeof originalSetItem }).setItem = originalSetItem;
         });
     });
 
@@ -510,7 +511,6 @@ describe('ReplayStorage', () => {
             ReplayStorage.saveReplayToHistory(replay1);
             
             // Mock localStorage.removeItem to throw an error
-            const originalRemoveItem = localStorage.removeItem;
             vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
                 throw new Error('Storage error');
             });
@@ -520,22 +520,13 @@ describe('ReplayStorage', () => {
             
             // Restore original removeItem
             vi.mocked(localStorage.removeItem).mockRestore();
-            (localStorage as { removeItem: typeof originalRemoveItem }).removeItem = originalRemoveItem;
         });
     });
 });
 
 describe('Replay Integration Tests', () => {
-    // Mock localStorage for integration tests
-    const localStorageMock = (() => {
-        let store: Record<string, string> = {};
-        return {
-            getItem: (key: string) => store[key] ?? null,
-            setItem: (key: string, value: string) => { store[key] = value; },
-            removeItem: (key: string) => { delete store[key]; },
-            clear: () => { store = {}; }
-        };
-    })();
+    // Use shared localStorage mock
+    const localStorageMock = createLocalStorageMock();
 
     beforeEach(() => {
         vi.stubGlobal('localStorage', localStorageMock);
