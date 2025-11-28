@@ -129,7 +129,6 @@ export class Game {
         // and only in live play mode, not replay or auto
         if (accepted && !this.isReplayMode && !this.isAuto) {
             const frame = this.replayRecorder.getCurrentFrame();
-            console.log(`[RECORD] Recording input at frame ${frame}:`, direction);
             this.replayRecorder.recordInput(direction);
         }
     }
