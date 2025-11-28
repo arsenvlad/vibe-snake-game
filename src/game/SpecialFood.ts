@@ -74,8 +74,8 @@ export class SpecialFood {
     spawn(snakeSegments: { x: number, y: number }[], regularFoodX: number, regularFoodY: number): boolean {
         if (this.isActive) return false;
 
-        // Randomly select a power-up type
-        const types: PowerUpType[] = ['speed_boost', 'slow_motion', 'bonus_points', 'invincibility'];
+        // Randomly select a power-up type from all available types
+        const types = Object.keys(POWER_UP_CONFIGS) as PowerUpType[];
         this.type = types[Math.floor(Math.random() * types.length)];
 
         // Find a valid position

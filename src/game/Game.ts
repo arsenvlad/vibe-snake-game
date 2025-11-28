@@ -172,9 +172,9 @@ export class Game {
         // Apply power-up effects to interval
         if (this.activePowerUp) {
             if (this.activePowerUp.type === 'speed_boost') {
-                currentInterval = currentInterval * 0.6; // 40% faster
+                currentInterval = currentInterval * 0.6; // 60% of normal interval = faster movement
             } else if (this.activePowerUp.type === 'slow_motion') {
-                currentInterval = currentInterval * 1.5; // 50% slower
+                currentInterval = currentInterval * 1.5; // 150% of normal interval = slower movement
             }
         }
 
