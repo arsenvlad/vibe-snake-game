@@ -9,6 +9,7 @@ export class AutoPilot {
     private food: Food;
     private gridWidth: number = 0;
     private gridHeight: number = 0;
+    private obstaclePositions: Point[] = [];
 
     constructor(snake: Snake, food: Food, gridWidth: number, gridHeight: number) {
         this.snake = snake;
@@ -19,6 +20,10 @@ export class AutoPilot {
     public updateBounds(gridWidth: number, gridHeight: number) {
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
+    }
+
+    public setObstacles(obstacles: Point[]) {
+        this.obstaclePositions = obstacles;
     }
 
     public getNextMove(): { x: number, y: number } | null {
@@ -71,6 +76,13 @@ export class AutoPilot {
             const p = body[i];
             if (p.x >= 0 && p.x < this.gridWidth && p.y >= 0 && p.y < this.gridHeight) {
                 grid[p.x][p.y] = false;
+            }
+        }
+
+        // Mark obstacles as non-walkable
+        for (const obs of this.obstaclePositions) {
+            if (obs.x >= 0 && obs.x < this.gridWidth && obs.y >= 0 && obs.y < this.gridHeight) {
+                grid[obs.x][obs.y] = false;
             }
         }
 

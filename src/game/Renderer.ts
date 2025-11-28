@@ -1,4 +1,5 @@
 import type { ThemeColors } from './themes';
+import type { Obstacle } from './Obstacle';
 
 // Thickness level constants
 const MIN_THICKNESS_LEVEL = 1;
@@ -128,6 +129,66 @@ export class Renderer {
         this.ctx.fill();
 
         this.ctx.shadowBlur = 0;
+    }
+
+    drawObstacles(obstacles: Obstacle[]) {
+        const padding = 2;
+
+        obstacles.forEach(obstacle => {
+            let color: string;
+            
+            switch (obstacle.type) {
+                case 'static':
+                    color = this.colors.obstacleStatic;
+                    break;
+                case 'moving':
+                    color = this.colors.obstacleMoving;
+                    break;
+                case 'temporary':
+                    color = this.colors.obstacleTemporary;
+                    break;
+            }
+
+            this.ctx.fillStyle = color;
+
+            // Different shapes for different obstacle types
+            if (obstacle.type === 'static') {
+                // Square with slight rounding
+                this.roundRect(
+                    obstacle.x * this.gridSize + padding,
+                    obstacle.y * this.gridSize + padding,
+                    this.gridSize - padding * 2,
+                    this.gridSize - padding * 2,
+                    3
+                );
+                this.ctx.fill();
+            } else if (obstacle.type === 'moving') {
+                // Diamond shape for moving obstacles
+                const cx = obstacle.x * this.gridSize + this.gridSize / 2;
+                const cy = obstacle.y * this.gridSize + this.gridSize / 2;
+                const size = this.gridSize / 2 - padding;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(cx, cy - size);
+                this.ctx.lineTo(cx + size, cy);
+                this.ctx.lineTo(cx, cy + size);
+                this.ctx.lineTo(cx - size, cy);
+                this.ctx.closePath();
+                this.ctx.fill();
+            } else {
+                // Triangle for temporary obstacles
+                const cx = obstacle.x * this.gridSize + this.gridSize / 2;
+                const cy = obstacle.y * this.gridSize + this.gridSize / 2;
+                const size = this.gridSize / 2 - padding;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(cx, cy - size);
+                this.ctx.lineTo(cx + size, cy + size);
+                this.ctx.lineTo(cx - size, cy + size);
+                this.ctx.closePath();
+                this.ctx.fill();
+            }
+        });
     }
 
     private roundRect(x: number, y: number, w: number, h: number, r: number) {

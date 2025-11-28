@@ -2,6 +2,7 @@ import { Renderer } from './Renderer';
 import { Snake } from './Snake';
 import { Food } from './Food';
 import { AutoPilot } from './AutoPilot';
+import { ObstacleManager } from './Obstacle';
 import type { ThemeName } from './themes';
 import { themes, defaultTheme } from './themes';
 import { AudioManager } from '../audio/AudioManager';
@@ -11,6 +12,7 @@ export class Game {
     private snake!: Snake;
     private food!: Food;
     private autoPilot!: AutoPilot;
+    private obstacleManager!: ObstacleManager;
     private audio: AudioManager;
 
     private lastTime: number = 0;
@@ -108,6 +110,7 @@ export class Game {
         this.updateScore();
         this.snake = new Snake(this.gridWidth, this.gridHeight);
         this.food = new Food(this.gridWidth, this.gridHeight);
+        this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
         this.food.respawn(this.snake.segments);
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight);
 
@@ -166,6 +169,12 @@ export class Game {
     }
 
     step() {
+        // Update obstacles (for moving and temporary obstacles)
+        this.obstacleManager.update();
+
+        // Update autoPilot with current obstacle positions
+        this.autoPilot.setObstacles(this.obstacleManager.getObstaclePositions());
+
         if (this.isAuto) {
             const nextMove = this.autoPilot.getNextMove();
             if (nextMove) this.snake.setDirection(nextMove);
@@ -173,8 +182,14 @@ export class Game {
 
         this.snake.move();
 
-        // Collision checks
+        // Collision checks (wall and self)
         if (this.snake.checkCollision()) {
+            this.gameOver();
+            return;
+        }
+
+        // Obstacle collision check
+        if (this.obstacleManager.checkCollision(this.snake.head)) {
             this.gameOver();
             return;
         }
@@ -182,16 +197,24 @@ export class Game {
         // Food check
         if (this.snake.head.x === this.food.x && this.snake.head.y === this.food.y) {
             this.snake.grow();
-            this.food.respawn(this.snake.segments);
+            this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
             this.score += 10;
             this.updateScore();
             this.tryUpdateHighScore();
             this.audio.play('eat');
+
+            // Check if new obstacles should spawn
+            this.obstacleManager.checkSpawn(
+                this.score,
+                this.snake.segments,
+                { x: this.food.x, y: this.food.y }
+            );
         }
     }
 
     draw() {
         this.renderer.clear();
+        if (this.obstacleManager) this.renderer.drawObstacles(this.obstacleManager.getObstacles());
         if (this.food) this.renderer.drawFood(this.food.x, this.food.y);
         if (this.snake) this.renderer.drawSnake(this.snake.segments);
     }
