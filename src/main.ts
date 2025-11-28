@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Replay UI elements
   const watchReplayBtn = document.getElementById('watch-replay-btn');
   const watchBestReplayBtn = document.getElementById('watch-best-replay-btn');
+  const replayHistoryBtn = document.getElementById('replay-history-btn');
+  const replayHistoryPanel = document.getElementById('replay-history-panel');
+  const replayHistoryList = document.getElementById('replay-history-list');
+  const replayHistoryCloseBtn = document.getElementById('replay-history-close-btn');
+  const replayHistoryEmpty = document.getElementById('replay-history-empty');
   const replayPauseBtn = document.getElementById('replay-pause-btn');
   const speed05xBtn = document.getElementById('speed-0.5x-btn');
   const speed1xBtn = document.getElementById('speed-1x-btn');
@@ -154,5 +159,72 @@ document.addEventListener('DOMContentLoaded', () => {
   replayWatchAgainBtn?.addEventListener('click', () => {
     replayCompleteScreen?.classList.add('hidden');
     game.watchLastReplay();
+  });
+
+  const formatReplayLabel = (timestamp: number, score: number) => {
+    const date = new Date(timestamp);
+    const dateLabel = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const timeLabel = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return `Score ${score} • ${dateLabel} ${timeLabel}`;
+  };
+
+  const renderReplayHistory = () => {
+    if (!replayHistoryList || !replayHistoryEmpty) return;
+    const history = game.getReplayHistory();
+    replayHistoryList.innerHTML = '';
+
+    if (!history.length) {
+      replayHistoryEmpty.classList.remove('hidden');
+      return;
+    }
+
+    replayHistoryEmpty.classList.add('hidden');
+    history.forEach((replay, index) => {
+      const listItem = document.createElement('li');
+      listItem.classList.add('history-item');
+      listItem.innerHTML = `
+        <div class="history-item__meta">
+          <span class="history-item__title">${formatReplayLabel(replay.timestamp, replay.finalScore)}</span>
+          <span class="history-item__details">Grid ${replay.gridWidth}x${replay.gridHeight} • Speed ${replay.speedPercent}%</span>
+        </div>
+        <button class="btn btn-secondary history-play-btn" data-history-index="${index}">Watch Replay</button>
+      `;
+      replayHistoryList.appendChild(listItem);
+    });
+  };
+
+  const toggleReplayHistory = (show: boolean) => {
+    if (!replayHistoryPanel) return;
+    if (show) {
+      renderReplayHistory();
+      replayHistoryPanel.classList.remove('hidden');
+    } else {
+      replayHistoryPanel.classList.add('hidden');
+    }
+  };
+
+  replayHistoryBtn?.addEventListener('click', () => toggleReplayHistory(true));
+  replayHistoryCloseBtn?.addEventListener('click', () => toggleReplayHistory(false));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'r' || event.key === 'R') {
+      event.preventDefault();
+      const isHidden = replayHistoryPanel?.classList.contains('hidden') ?? true;
+      toggleReplayHistory(isHidden);
+    }
+  });
+
+  replayHistoryList?.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    const button = target.closest('button[data-history-index]') as HTMLButtonElement | null;
+    if (!button) return;
+
+    const index = parseInt(button.dataset.historyIndex ?? '-1', 10);
+    const history = game.getReplayHistory();
+    const replay = history[index];
+    if (replay) {
+      toggleReplayHistory(false);
+      game.startReplay(replay);
+    }
   });
 });

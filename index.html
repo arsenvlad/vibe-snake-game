@@ -97,10 +97,26 @@
         </div>
       </div>
 
+      <div class="replay-history-bar">
+        <button id="replay-history-btn" class="btn btn-secondary">Replay History (R)</button>
+        <div id="replay-history-panel" class="replay-history-panel hidden">
+          <div class="replay-history-header">
+            <div>
+              <div class="replay-history-title">Recent Games</div>
+              <div class="replay-history-subtitle">Last 10 games are saved for replays.</div>
+            </div>
+            <button id="replay-history-close-btn" class="icon-btn" aria-label="Close history">✕</button>
+          </div>
+          <div id="replay-history-empty" class="history-empty">Play a game to start building history.</div>
+          <ul id="replay-history-list" class="replay-history-list"></ul>
+        </div>
+      </div>
+
       <div class="keyboard-legend">
         <span class="legend-item"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> Move</span>
         <span class="legend-item"><kbd>A</kbd> Auto Pilot</span>
         <span class="legend-item"><kbd>P</kbd> Pause</span>
+        <span class="legend-item"><kbd>R</kbd> Replay History</span>
       </div>
     </div>
   </div>

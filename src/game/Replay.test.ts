@@ -322,6 +322,27 @@ describe('ReplayStorage', () => {
         });
     });
 
+    describe('saveReplayToHistory and loadReplayHistory', () => {
+        it('should save and return history capped at 10 entries', () => {
+            const replays = Array.from({ length: 12 }).map((_, index) => ({
+                ...sampleReplay,
+                finalScore: index,
+                timestamp: index
+            }));
+
+            replays.forEach(replay => ReplayStorage.saveReplayToHistory(replay));
+
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(10);
+            expect(history[0].finalScore).toBe(11);
+            expect(history[9].finalScore).toBe(2);
+        });
+
+        it('should return empty history when nothing saved', () => {
+            expect(ReplayStorage.loadReplayHistory()).toEqual([]);
+        });
+    });
+
     describe('exportReplay and importReplay', () => {
         it('should export and import replay data', () => {
             const encoded = ReplayStorage.exportReplay(sampleReplay);

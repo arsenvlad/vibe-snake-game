@@ -166,8 +166,10 @@ export class Game {
         this.food = new Food(this.gridWidth, this.gridHeight);
         this.food.setRng(this.rng);
         this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
-        this.food.respawn(this.snake.segments);
+        this.obstacleManager.setRng(this.rng);
+        this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
+        this.specialFood.setRng(this.rng);
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
         this.activePowerUp = null;
         this.updatePowerUpHUD();
@@ -465,7 +467,8 @@ export class Game {
         // Stop recording and save replay
         const replayData = this.replayRecorder.stopRecording(this.score);
         ReplayStorage.saveLastReplay(replayData);
-        
+        ReplayStorage.saveReplayToHistory(replayData);
+
         // Save as high score replay if it's the best
         const isNewHighScore = ReplayStorage.saveHighScoreReplay(replayData);
         
@@ -537,11 +540,13 @@ export class Game {
 
         this.food = new Food(this.gridWidth, this.gridHeight);
         this.food.setRng(this.rng);
-        this.food.respawn(this.snake.segments);
 
         // Initialize obstacle manager and special food for replay
         this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
+        this.obstacleManager.setRng(this.rng);
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
+        this.specialFood.setRng(this.rng);
+        this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
         this.activePowerUp = null;
         this.updatePowerUpHUD();
@@ -699,6 +704,13 @@ export class Game {
      */
     getIsReplayMode(): boolean {
         return this.isReplayMode;
+    }
+
+    /**
+     * Get replay history (latest first)
+     */
+    getReplayHistory(): ReplayData[] {
+        return ReplayStorage.loadReplayHistory();
     }
 
     /**
