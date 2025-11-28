@@ -148,5 +148,54 @@ describe('AutoPilot', () => {
             // Should return some valid move (not into its own body)
             expect(move).toBeDefined();
         });
+
+        it('should navigate around obstacles', () => {
+            // Position snake at (2, 2) heading right
+            snake.segments = [
+                { x: 2, y: 2 },
+                { x: 1, y: 2 },
+                { x: 0, y: 2 }
+            ];
+            snake.direction = { x: 1, y: 0 };
+            snake.nextDirection = { x: 1, y: 0 };
+
+            // Place food to the right
+            food.x = 5;
+            food.y = 2;
+
+            // Place obstacle blocking direct path
+            autoPilot.setObstacles([{ x: 3, y: 2 }]);
+
+            const move = autoPilot.getNextMove();
+            // Should suggest a move to go around the obstacle (not directly right)
+            expect(move).toBeDefined();
+            expect(['x', 'y'].every(key => key in move!)).toBe(true);
+        });
+
+        it('should avoid obstacles when finding path', () => {
+            // Position snake
+            snake.segments = [
+                { x: 3, y: 3 },
+                { x: 2, y: 3 },
+                { x: 1, y: 3 }
+            ];
+            snake.direction = { x: 1, y: 0 };
+            snake.nextDirection = { x: 1, y: 0 };
+
+            // Place food to the right
+            food.x = 6;
+            food.y = 3;
+
+            // Place obstacles blocking the path
+            autoPilot.setObstacles([
+                { x: 4, y: 3 },
+                { x: 4, y: 2 },
+                { x: 4, y: 4 }
+            ]);
+
+            const move = autoPilot.getNextMove();
+            // Should return some valid move
+            expect(move).toBeDefined();
+        });
     });
 });

@@ -93,5 +93,55 @@ describe('Food', () => {
             expect(food.y).toBeGreaterThanOrEqual(0);
             expect(food.y).toBeLessThan(gridHeight);
         });
+
+        it('should avoid obstacle positions', () => {
+            const snakeSegments = [
+                { x: 5, y: 5 },
+                { x: 4, y: 5 },
+                { x: 3, y: 5 }
+            ];
+            const obstaclePositions = [
+                { x: 10, y: 10 },
+                { x: 11, y: 10 },
+                { x: 12, y: 10 }
+            ];
+
+            for (let i = 0; i < 50; i++) {
+                food.respawn(snakeSegments, obstaclePositions);
+                const overlapsSnake = snakeSegments.some(
+                    segment => segment.x === food.x && segment.y === food.y
+                );
+                const overlapsObstacle = obstaclePositions.some(
+                    obs => obs.x === food.x && obs.y === food.y
+                );
+                expect(overlapsSnake).toBe(false);
+                expect(overlapsObstacle).toBe(false);
+            }
+        });
+
+        it('should find position when avoiding both snake and obstacles', () => {
+            // Create a sparse occupation
+            const snakeSegments = [
+                { x: 0, y: 0 },
+                { x: 1, y: 0 },
+                { x: 2, y: 0 }
+            ];
+            const obstaclePositions = [
+                { x: 0, y: 1 },
+                { x: 1, y: 1 }
+            ];
+
+            food.respawn(snakeSegments, obstaclePositions);
+            
+            // Should find a valid position
+            const overlapsSnake = snakeSegments.some(
+                segment => segment.x === food.x && segment.y === food.y
+            );
+            const overlapsObstacle = obstaclePositions.some(
+                obs => obs.x === food.x && obs.y === food.y
+            );
+            expect(overlapsSnake).toBe(false);
+            expect(overlapsObstacle).toBe(false);
+        });
     });
 });

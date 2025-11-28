@@ -3,6 +3,7 @@ import { Snake } from './Snake';
 import { Food } from './Food';
 import { SpecialFood, type PowerUpType, POWER_UP_CONFIGS } from './SpecialFood';
 import { AutoPilot } from './AutoPilot';
+import { ObstacleManager } from './Obstacle';
 import type { ThemeName } from './themes';
 import { themes, defaultTheme } from './themes';
 import { AudioManager } from '../audio/AudioManager';
@@ -19,6 +20,7 @@ export class Game {
     private food!: Food;
     private specialFood!: SpecialFood;
     private autoPilot!: AutoPilot;
+    private obstacleManager!: ObstacleManager;
     private audio: AudioManager;
 
     private lastTime: number = 0;
@@ -118,6 +120,7 @@ export class Game {
         this.updateScore();
         this.snake = new Snake(this.gridWidth, this.gridHeight);
         this.food = new Food(this.gridWidth, this.gridHeight);
+        this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
         this.food.respawn(this.snake.segments);
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
@@ -228,6 +231,12 @@ export class Game {
     }
 
     step() {
+        // Update obstacles (for moving and temporary obstacles)
+        this.obstacleManager.update();
+
+        // Update autoPilot with current obstacle positions
+        this.autoPilot.setObstacles(this.obstacleManager.getObstaclePositions());
+
         if (this.isAuto) {
             const nextMove = this.autoPilot.getNextMove();
             if (nextMove) this.snake.setDirection(nextMove);
@@ -239,6 +248,7 @@ export class Game {
         const isInvincible = this.activePowerUp?.type === 'invincibility';
 
         // Collision checks
+        // Collision checks (wall and self)
         if (this.snake.checkCollision()) {
             if (!isInvincible) {
                 this.gameOver();
@@ -249,9 +259,16 @@ export class Game {
         }
 
         // Regular food check
+        // Obstacle collision check
+        if (this.obstacleManager.checkCollision(this.snake.head)) {
+            this.gameOver();
+            return;
+        }
+
+        // Food check
         if (this.snake.head.x === this.food.x && this.snake.head.y === this.food.y) {
             this.snake.grow();
-            this.food.respawn(this.snake.segments);
+            this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
             this.score += 10;
             this.updateScore();
             this.tryUpdateHighScore();
@@ -268,6 +285,12 @@ export class Game {
             this.snake.head.x === this.specialFood.x && 
             this.snake.head.y === this.specialFood.y) {
             this.collectSpecialFood();
+            // Check if new obstacles should spawn
+            this.obstacleManager.checkSpawn(
+                this.score,
+                this.snake.segments,
+                { x: this.food.x, y: this.food.y }
+            );
         }
     }
 
@@ -306,6 +329,7 @@ export class Game {
 
     draw() {
         this.renderer.clear();
+        if (this.obstacleManager) this.renderer.drawObstacles(this.obstacleManager.getObstacles());
         if (this.food) this.renderer.drawFood(this.food.x, this.food.y);
         if (this.specialFood?.isActive) {
             this.renderer.drawSpecialFood(
