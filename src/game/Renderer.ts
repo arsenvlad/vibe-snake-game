@@ -1,11 +1,19 @@
 import type { ThemeColors } from './themes';
 
+// Thickness level constants
+const MIN_THICKNESS_LEVEL = 1;
+const MAX_THICKNESS_LEVEL = 5;
+const DEFAULT_THICKNESS_LEVEL = 3;
+const MAX_PADDING = 6;
+const MIN_CORNER_RADIUS = 2;
+
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private width: number;
     private height: number;
     private gridSize: number;
     private colors: ThemeColors;
+    private thickness: number = DEFAULT_THICKNESS_LEVEL;
 
     constructor(canvas: HTMLCanvasElement, gridSize: number, colors: ThemeColors) {
         this.ctx = canvas.getContext('2d')!;
@@ -17,6 +25,10 @@ export class Renderer {
 
     setTheme(colors: ThemeColors) {
         this.colors = colors;
+    }
+
+    setThickness(level: number) {
+        this.thickness = Math.max(MIN_THICKNESS_LEVEL, Math.min(MAX_THICKNESS_LEVEL, level));
     }
 
     clear() {
@@ -43,6 +55,9 @@ export class Renderer {
     }
 
     drawSnake(segments: { x: number, y: number }[]) {
+        // Calculate padding based on thickness (level 1 = thinnest, level 5 = thickest)
+        const padding = MAX_PADDING - this.thickness;
+
         segments.forEach((segment, index) => {
             const isHead = index === 0;
 
@@ -64,30 +79,33 @@ export class Renderer {
 
             this.ctx.fillStyle = gradient;
 
-            // Round corners
-            const radius = isHead ? 6 : 4;
+            // Round corners - scale with thickness
+            const baseRadius = isHead ? 6 : 4;
+            const radius = Math.max(MIN_CORNER_RADIUS, baseRadius - (MAX_THICKNESS_LEVEL - this.thickness));
             this.roundRect(
-                segment.x * this.gridSize + 1,
-                segment.y * this.gridSize + 1,
-                this.gridSize - 2,
-                this.gridSize - 2,
+                segment.x * this.gridSize + padding,
+                segment.y * this.gridSize + padding,
+                this.gridSize - padding * 2,
+                this.gridSize - padding * 2,
                 radius
             );
             this.ctx.fill();
 
             if (isHead) {
-                // Eyes
+                // Eyes - scale position and size with thickness
+                const eyeScale = this.thickness / MAX_THICKNESS_LEVEL;
+                const eyeRadius = Math.max(1, 2 * eyeScale);
                 this.ctx.fillStyle = '#fff';
                 this.ctx.beginPath();
                 this.ctx.arc(
                     segment.x * this.gridSize + this.gridSize * 0.3,
                     segment.y * this.gridSize + this.gridSize * 0.3,
-                    2, 0, Math.PI * 2
+                    eyeRadius, 0, Math.PI * 2
                 );
                 this.ctx.arc(
                     segment.x * this.gridSize + this.gridSize * 0.7,
                     segment.y * this.gridSize + this.gridSize * 0.3,
-                    2, 0, Math.PI * 2
+                    eyeRadius, 0, Math.PI * 2
                 );
                 this.ctx.fill();
             }
