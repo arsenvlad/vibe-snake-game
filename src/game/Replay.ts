@@ -198,12 +198,14 @@ export class ReplayPlayer {
 
     /**
      * Process the current frame during playback
-     * Returns true if there are pending inputs for this frame
+     * Returns the last direction applied for this frame, or null if none
      */
     processFrame(): { x: number; y: number } | null {
         if (!this.replayData || !this.isPlaying || this.isPaused) return null;
 
-        // Check if there are inputs for the current frame
+        let lastDirection: { x: number; y: number } | null = null;
+
+        // Process ALL inputs for the current frame (not just the first one)
         while (
             this.inputIndex < this.replayData.inputs.length &&
             this.replayData.inputs[this.inputIndex].frame === this.currentFrame
@@ -212,12 +214,12 @@ export class ReplayPlayer {
             const direction = DIRECTION_VECTORS[input.direction];
             if (this.onInputCallback && direction) {
                 this.onInputCallback(direction);
+                lastDirection = direction;
             }
             this.inputIndex++;
-            return direction;
         }
 
-        return null;
+        return lastDirection;
     }
 
     /**

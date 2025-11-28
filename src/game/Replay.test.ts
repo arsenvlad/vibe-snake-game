@@ -369,3 +369,171 @@ describe('ReplayStorage', () => {
         });
     });
 });
+
+describe('Replay Integration Tests', () => {
+    describe('Full record-playback cycle', () => {
+        it('should correctly replay all recorded inputs at the right frames', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            // Simulate a game session
+            // Start recording
+            recorder.startRecording(
+                12345,
+                30,
+                30,
+                [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }],
+                { x: 1, y: 0 },
+                75,
+                'dark'
+            );
+            
+            // Simulate game frames with inputs
+            // Frame 0 - no input yet, just advance
+            recorder.advanceFrame(); // Now at frame 1
+            
+            // Frame 1 - user presses down
+            recorder.recordInput({ x: 0, y: 1 }); // Recorded at frame 1
+            recorder.advanceFrame(); // Now at frame 2
+            
+            // Frame 2 - no input
+            recorder.advanceFrame(); // Now at frame 3
+            
+            // Frame 3 - user presses left
+            recorder.recordInput({ x: -1, y: 0 }); // Recorded at frame 3
+            recorder.advanceFrame(); // Now at frame 4
+            
+            // Frame 4 - user presses up
+            recorder.recordInput({ x: 0, y: -1 }); // Recorded at frame 4
+            recorder.advanceFrame(); // Now at frame 5
+            
+            // Game ends
+            const replayData = recorder.stopRecording(50);
+            
+            // Verify recorded data
+            expect(replayData.inputs.length).toBe(3);
+            expect(replayData.inputs[0]).toEqual({ frame: 1, direction: 'down' });
+            expect(replayData.inputs[1]).toEqual({ frame: 3, direction: 'left' });
+            expect(replayData.inputs[2]).toEqual({ frame: 4, direction: 'up' });
+            
+            // Now playback
+            player.loadReplay(replayData);
+            
+            const appliedInputs: Array<{ frame: number; direction: { x: number; y: number } }> = [];
+            player.startPlayback(
+                (direction) => {
+                    appliedInputs.push({ frame: player.getCurrentFrame(), direction });
+                },
+                () => {}
+            );
+            
+            // Simulate playback frames - same loop structure as recording
+            // Frame 0
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 1
+            
+            // Frame 1 - should apply 'down'
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 2
+            
+            // Frame 2 - no input
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 3
+            
+            // Frame 3 - should apply 'left'
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 4
+            
+            // Frame 4 - should apply 'up'
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 5
+            
+            // Verify playback applied inputs at correct frames
+            expect(appliedInputs.length).toBe(3);
+            expect(appliedInputs[0]).toEqual({ frame: 1, direction: { x: 0, y: 1 } });
+            expect(appliedInputs[1]).toEqual({ frame: 3, direction: { x: -1, y: 0 } });
+            expect(appliedInputs[2]).toEqual({ frame: 4, direction: { x: 0, y: -1 } });
+        });
+        
+        it('should handle input recorded before first advanceFrame', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            
+            // Input before any frame advance - recorded at frame 0
+            recorder.recordInput({ x: 0, y: -1 });
+            recorder.advanceFrame();
+            
+            const replayData = recorder.stopRecording(10);
+            expect(replayData.inputs[0].frame).toBe(0);
+            
+            // Playback
+            player.loadReplay(replayData);
+            const appliedInputs: Array<{ frame: number; direction: { x: number; y: number } }> = [];
+            player.startPlayback(
+                (direction) => appliedInputs.push({ frame: player.getCurrentFrame(), direction }),
+                () => {}
+            );
+            
+            // First processFrame at frame 0 should apply the input
+            player.processFrame();
+            expect(appliedInputs.length).toBe(1);
+            expect(appliedInputs[0].frame).toBe(0);
+        });
+        
+        it('should store and retrieve replay from history correctly', () => {
+            const recorder = new ReplayRecorder();
+            
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            recorder.recordInput({ x: 0, y: 1 });
+            recorder.advanceFrame();
+            recorder.recordInput({ x: -1, y: 0 });
+            const replayData = recorder.stopRecording(100);
+            
+            // Save to history
+            ReplayStorage.saveReplayToHistory(replayData);
+            
+            // Load from history
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].inputs.length).toBe(2);
+            expect(history[0].inputs[0].direction).toBe('down');
+            expect(history[0].inputs[1].direction).toBe('left');
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should handle multiple inputs at the same frame', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            
+            // Multiple inputs at frame 0 (user pressed keys rapidly)
+            recorder.recordInput({ x: 0, y: -1 }); // up
+            recorder.recordInput({ x: -1, y: 0 }); // left (last one should win)
+            recorder.advanceFrame();
+            
+            const replayData = recorder.stopRecording(10);
+            
+            // Both inputs should be recorded
+            expect(replayData.inputs.length).toBe(2);
+            expect(replayData.inputs[0]).toEqual({ frame: 0, direction: 'up' });
+            expect(replayData.inputs[1]).toEqual({ frame: 0, direction: 'left' });
+            
+            // Playback should apply BOTH inputs (last one wins due to setDirection behavior)
+            player.loadReplay(replayData);
+            const appliedInputs: Array<{ frame: number; direction: { x: number; y: number } }> = [];
+            player.startPlayback(
+                (direction) => appliedInputs.push({ frame: player.getCurrentFrame(), direction }),
+                () => {}
+            );
+            
+            // ProcessFrame should apply BOTH inputs at frame 0
+            player.processFrame();
+            expect(appliedInputs.length).toBe(2);
+            expect(appliedInputs[0]).toEqual({ frame: 0, direction: { x: 0, y: -1 } });
+            expect(appliedInputs[1]).toEqual({ frame: 0, direction: { x: -1, y: 0 } });
+        });
+    });
+});
