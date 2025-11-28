@@ -1,5 +1,7 @@
 # Snake Game
 
+🎮 **[Play the game here!](https://arsenvlad.github.io/vibe-snake-game/)** 🎮
+
 A classic Snake game implementation built with TypeScript and Vite, featuring an auto-pilot mode powered by AI pathfinding algorithms.
 
 ## Getting Started
