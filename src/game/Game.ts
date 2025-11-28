@@ -321,7 +321,13 @@ export class Game {
 
         if (this.isAuto && !this.isReplayMode) {
             const nextMove = this.autoPilot.getNextMove();
-            if (nextMove) this.snake.setDirection(nextMove);
+            if (nextMove) {
+                const accepted = this.snake.setDirection(nextMove);
+                // Record auto-pilot moves for replay
+                if (accepted) {
+                    this.replayRecorder.recordInput(nextMove);
+                }
+            }
         }
 
         this.snake.move();
