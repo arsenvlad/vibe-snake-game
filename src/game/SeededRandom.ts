@@ -10,7 +10,8 @@ export class SeededRandom {
     }
 
     /**
-     * Get the current seed value
+     * Get the current internal state of the generator.
+     * Note: This value changes with each call to random().
      */
     getSeed(): number {
         return this.state;

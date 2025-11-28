@@ -267,10 +267,8 @@ export class Game {
             this.audio.play('eat');
         }
 
-        // Check if replay is complete
-        if (this.isReplayMode && this.replayPlayer.checkComplete()) {
-            // Continue running until collision
-        }
+        // In replay mode, we continue running even after all inputs are processed
+        // The game will naturally end when the snake collides (handled above)
     }
 
     draw() {

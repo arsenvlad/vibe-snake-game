@@ -314,11 +314,15 @@ export class ReplayPlayer {
     }
 
     /**
-     * Get total frames (estimated from last input)
+     * Get total frames (estimated from last input).
+     * Adds a buffer of frames after the last input to account for
+     * the snake continuing to move until collision.
      */
     getTotalFrames(): number {
         if (!this.replayData || this.replayData.inputs.length === 0) return 0;
-        return this.replayData.inputs[this.replayData.inputs.length - 1].frame + 100;
+        // Add 100 frames as buffer for the snake's movement after last input until collision
+        const FRAMES_AFTER_LAST_INPUT = 100;
+        return this.replayData.inputs[this.replayData.inputs.length - 1].frame + FRAMES_AFTER_LAST_INPUT;
     }
 }
 
