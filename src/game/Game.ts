@@ -247,8 +247,7 @@ export class Game {
         // Check invincibility status
         const isInvincible = this.activePowerUp?.type === 'invincibility';
 
-        // Collision checks
-        // Collision checks (wall and self)
+        // Wall and self collision checks
         if (this.snake.checkCollision()) {
             if (!isInvincible) {
                 this.gameOver();
@@ -258,7 +257,6 @@ export class Game {
             this.handleWrapAround();
         }
 
-        // Regular food check
         // Obstacle collision check
         if (this.obstacleManager.checkCollision(this.snake.head)) {
             this.gameOver();
@@ -278,6 +276,13 @@ export class Game {
             if (this.specialFood.shouldSpawn()) {
                 this.specialFood.spawn(this.snake.segments, this.food.x, this.food.y);
             }
+
+            // Check if new obstacles should spawn
+            this.obstacleManager.checkSpawn(
+                this.score,
+                this.snake.segments,
+                { x: this.food.x, y: this.food.y }
+            );
         }
 
         // Special food check
@@ -285,12 +290,6 @@ export class Game {
             this.snake.head.x === this.specialFood.x && 
             this.snake.head.y === this.specialFood.y) {
             this.collectSpecialFood();
-            // Check if new obstacles should spawn
-            this.obstacleManager.checkSpawn(
-                this.score,
-                this.snake.segments,
-                { x: this.food.x, y: this.food.y }
-            );
         }
     }
 

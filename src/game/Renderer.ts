@@ -256,6 +256,8 @@ export class Renderer {
         this.ctx.lineTo(cx, cy - outerRadius);
         this.ctx.closePath();
         this.ctx.fill();
+    }
+
     drawObstacles(obstacles: Obstacle[]) {
         const padding = 2;
 
