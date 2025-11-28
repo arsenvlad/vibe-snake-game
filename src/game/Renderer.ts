@@ -1,12 +1,19 @@
 import type { ThemeColors } from './themes';
 
+// Thickness level constants
+const MIN_THICKNESS_LEVEL = 1;
+const MAX_THICKNESS_LEVEL = 5;
+const DEFAULT_THICKNESS_LEVEL = 3;
+const MAX_PADDING = 6;
+const MIN_CORNER_RADIUS = 2;
+
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private width: number;
     private height: number;
     private gridSize: number;
     private colors: ThemeColors;
-    private thickness: number = 3; // Default thickness level (1-5)
+    private thickness: number = DEFAULT_THICKNESS_LEVEL;
 
     constructor(canvas: HTMLCanvasElement, gridSize: number, colors: ThemeColors) {
         this.ctx = canvas.getContext('2d')!;
@@ -21,7 +28,7 @@ export class Renderer {
     }
 
     setThickness(level: number) {
-        this.thickness = Math.max(1, Math.min(5, level));
+        this.thickness = Math.max(MIN_THICKNESS_LEVEL, Math.min(MAX_THICKNESS_LEVEL, level));
     }
 
     clear() {
@@ -49,8 +56,7 @@ export class Renderer {
 
     drawSnake(segments: { x: number, y: number }[]) {
         // Calculate padding based on thickness (level 1 = thinnest, level 5 = thickest)
-        // Level 5: padding = 1, Level 1: padding = 5
-        const padding = 6 - this.thickness;
+        const padding = MAX_PADDING - this.thickness;
 
         segments.forEach((segment, index) => {
             const isHead = index === 0;
@@ -75,7 +81,7 @@ export class Renderer {
 
             // Round corners - scale with thickness
             const baseRadius = isHead ? 6 : 4;
-            const radius = Math.max(2, baseRadius - (5 - this.thickness));
+            const radius = Math.max(MIN_CORNER_RADIUS, baseRadius - (MAX_THICKNESS_LEVEL - this.thickness));
             this.roundRect(
                 segment.x * this.gridSize + padding,
                 segment.y * this.gridSize + padding,
@@ -87,7 +93,7 @@ export class Renderer {
 
             if (isHead) {
                 // Eyes - scale position and size with thickness
-                const eyeScale = this.thickness / 5;
+                const eyeScale = this.thickness / MAX_THICKNESS_LEVEL;
                 const eyeRadius = Math.max(1, 2 * eyeScale);
                 this.ctx.fillStyle = '#fff';
                 this.ctx.beginPath();
