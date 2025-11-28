@@ -18,10 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Replay UI elements
   const watchReplayBtn = document.getElementById('watch-replay-btn');
   const watchBestReplayBtn = document.getElementById('watch-best-replay-btn');
-  const replayHistoryBtn = document.getElementById('replay-history-btn');
   const replayHistoryPanel = document.getElementById('replay-history-panel');
   const replayHistoryList = document.getElementById('replay-history-list');
   const replayHistoryCloseBtn = document.getElementById('replay-history-close-btn');
+  const clearAllHistoryBtn = document.getElementById('clear-all-history-btn');
   const replayHistoryEmpty = document.getElementById('replay-history-empty');
   const replayPauseBtn = document.getElementById('replay-pause-btn');
   const speed05xBtn = document.getElementById('speed-0.5x-btn');
@@ -182,12 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
     history.forEach((replay, index) => {
       const listItem = document.createElement('li');
       listItem.classList.add('history-item');
+      const themeInfo = replay.theme ? ` • ${replay.theme}` : '';
       listItem.innerHTML = `
         <div class="history-item__meta">
           <span class="history-item__title">${formatReplayLabel(replay.timestamp, replay.finalScore)}</span>
-          <span class="history-item__details">Grid ${replay.gridWidth}x${replay.gridHeight} • Speed ${replay.speedPercent}%</span>
+          <span class="history-item__details">Grid ${replay.gridWidth}x${replay.gridHeight} • Speed ${replay.speedPercent}%${themeInfo}</span>
         </div>
-        <button class="btn btn-secondary history-play-btn" data-history-index="${index}">Watch Replay</button>
+        <div class="history-item__actions">
+          <button class="btn btn-small history-play-btn" data-history-index="${index}">Watch</button>
+          <button class="icon-btn history-delete-btn" data-delete-index="${index}" title="Delete">🗑️</button>
+        </div>
       `;
       replayHistoryList.appendChild(listItem);
     });
@@ -203,8 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  replayHistoryBtn?.addEventListener('click', () => toggleReplayHistory(true));
   replayHistoryCloseBtn?.addEventListener('click', () => toggleReplayHistory(false));
+
+  clearAllHistoryBtn?.addEventListener('click', () => {
+    if (confirm('Clear all replay history?')) {
+      game.clearReplayHistory();
+      renderReplayHistory();
+    }
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'r' || event.key === 'R') {
@@ -216,6 +226,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   replayHistoryList?.addEventListener('click', (event) => {
     const target = event.target as HTMLElement;
+    
+    // Handle delete button click
+    const deleteBtn = target.closest('button[data-delete-index]') as HTMLButtonElement | null;
+    if (deleteBtn) {
+      const index = parseInt(deleteBtn.dataset.deleteIndex ?? '-1', 10);
+      if (index >= 0) {
+        game.deleteReplayFromHistory(index);
+        renderReplayHistory();
+      }
+      return;
+    }
+    
+    // Handle watch button click
     const button = target.closest('button[data-history-index]') as HTMLButtonElement | null;
     if (!button) return;
 

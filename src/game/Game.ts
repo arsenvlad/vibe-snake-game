@@ -148,7 +148,8 @@ export class Game {
             this.gridHeight,
             this.snake.segments,
             this.snake.direction,
-            this.speedPercent
+            this.speedPercent,
+            this.currentTheme
         );
 
         requestAnimationFrame((t) => this.update(t));
@@ -554,6 +555,16 @@ export class Game {
         // Set speed from replay
         this.setSpeed(replayData.speedPercent);
 
+        // Apply theme from replay if available
+        if (replayData.theme) {
+            this.setTheme(replayData.theme as ThemeName);
+            // Also update the theme selector UI
+            const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
+            if (themeSelect) {
+                themeSelect.value = replayData.theme;
+            }
+        }
+
         // Load replay into player
         this.replayPlayer.loadReplay(replayData);
         this.replayPlayer.startPlayback(
@@ -711,6 +722,20 @@ export class Game {
      */
     getReplayHistory(): ReplayData[] {
         return ReplayStorage.loadReplayHistory();
+    }
+
+    /**
+     * Delete a specific replay from history by index
+     */
+    deleteReplayFromHistory(index: number): void {
+        ReplayStorage.deleteReplayFromHistory(index);
+    }
+
+    /**
+     * Clear all replay history
+     */
+    clearReplayHistory(): void {
+        ReplayStorage.clearReplayHistory();
     }
 
     /**

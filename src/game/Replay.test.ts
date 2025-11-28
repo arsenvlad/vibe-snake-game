@@ -323,8 +323,8 @@ describe('ReplayStorage', () => {
     });
 
     describe('saveReplayToHistory and loadReplayHistory', () => {
-        it('should save and return history capped at 10 entries', () => {
-            const replays = Array.from({ length: 12 }).map((_, index) => ({
+        it('should save and return history capped at 50 entries', () => {
+            const replays = Array.from({ length: 55 }).map((_, index) => ({
                 ...sampleReplay,
                 finalScore: index,
                 timestamp: index
@@ -333,9 +333,9 @@ describe('ReplayStorage', () => {
             replays.forEach(replay => ReplayStorage.saveReplayToHistory(replay));
 
             const history = ReplayStorage.loadReplayHistory();
-            expect(history.length).toBe(10);
-            expect(history[0].finalScore).toBe(11);
-            expect(history[9].finalScore).toBe(2);
+            expect(history.length).toBe(50);
+            expect(history[0].finalScore).toBe(54);
+            expect(history[49].finalScore).toBe(5);
         });
 
         it('should return empty history when nothing saved', () => {
