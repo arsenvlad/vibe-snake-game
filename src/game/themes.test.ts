@@ -13,7 +13,7 @@ describe('themes', () => {
     });
 
     describe('themes object', () => {
-        const expectedThemes: ThemeName[] = ['dark', 'light', 'green', 'red', 'blue'];
+        const expectedThemes: ThemeName[] = ['dark', 'light', 'green', 'red', 'blue', 'purple'];
 
         it('should contain all expected themes', () => {
             expectedThemes.forEach(themeName => {
