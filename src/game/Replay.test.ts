@@ -54,6 +54,38 @@ describe('ReplayRecorder', () => {
         });
     });
 
+    describe('recordThemeChange', () => {
+        it('should record theme changes when recording', () => {
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            recorder.advanceFrame();
+            recorder.recordThemeChange('light');
+            recorder.advanceFrame();
+            recorder.advanceFrame();
+            recorder.recordThemeChange('blue');
+            
+            const data = recorder.stopRecording(100);
+            expect(data.themeChanges).toBeDefined();
+            expect(data.themeChanges!.length).toBe(2);
+            expect(data.themeChanges![0].frame).toBe(1);
+            expect(data.themeChanges![0].theme).toBe('light');
+            expect(data.themeChanges![1].frame).toBe(3);
+            expect(data.themeChanges![1].theme).toBe('blue');
+        });
+
+        it('should not record theme changes when not recording', () => {
+            recorder.recordThemeChange('light');
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            const data = recorder.stopRecording(0);
+            expect(data.themeChanges!.length).toBe(0);
+        });
+
+        it('should preserve initial theme in replay data', () => {
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'green');
+            const data = recorder.stopRecording(0);
+            expect(data.theme).toBe('green');
+        });
+    });
+
     describe('advanceFrame', () => {
         it('should increment frame counter during recording', () => {
             recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75);
@@ -170,6 +202,54 @@ describe('ReplayPlayer', () => {
             const result = player.processFrame();
             expect(result).toBeNull();
         });
+
+        it('should call theme change callback for theme changes on current frame', () => {
+            const replayWithThemeChanges: ReplayData = {
+                ...sampleReplay,
+                theme: 'dark',
+                themeChanges: [
+                    { frame: 0, theme: 'light' },
+                    { frame: 2, theme: 'blue' }
+                ]
+            };
+            player.loadReplay(replayWithThemeChanges);
+            const themes: string[] = [];
+            player.startPlayback(() => {}, () => {}, (theme) => themes.push(theme));
+            
+            // Frame 0 should have 'light' theme change
+            player.processFrame();
+            expect(themes.length).toBe(1);
+            expect(themes[0]).toBe('light');
+            
+            // Advance to frame 2
+            player.advanceFrame(); // Frame 1
+            player.processFrame();
+            expect(themes.length).toBe(1); // No new theme change at frame 1
+            
+            player.advanceFrame(); // Frame 2
+            player.processFrame();
+            expect(themes.length).toBe(2);
+            expect(themes[1]).toBe('blue');
+        });
+
+        it('should handle multiple theme changes at the same frame', () => {
+            const replayWithMultipleThemeChanges: ReplayData = {
+                ...sampleReplay,
+                theme: 'dark',
+                themeChanges: [
+                    { frame: 0, theme: 'light' },
+                    { frame: 0, theme: 'blue' }
+                ]
+            };
+            player.loadReplay(replayWithMultipleThemeChanges);
+            const themes: string[] = [];
+            player.startPlayback(() => {}, () => {}, (theme) => themes.push(theme));
+            
+            player.processFrame();
+            expect(themes.length).toBe(2);
+            expect(themes[0]).toBe('light');
+            expect(themes[1]).toBe('blue');
+        });
     });
 
     describe('advanceFrame', () => {
@@ -225,6 +305,30 @@ describe('ReplayPlayer', () => {
             player.skipToEnd();
             
             expect(directions.length).toBe(3);
+            expect(onComplete).toHaveBeenCalled();
+        });
+
+        it('should process all remaining theme changes', () => {
+            const replayWithThemeChanges: ReplayData = {
+                ...sampleReplay,
+                theme: 'dark',
+                themeChanges: [
+                    { frame: 0, theme: 'light' },
+                    { frame: 2, theme: 'blue' },
+                    { frame: 5, theme: 'green' }
+                ]
+            };
+            player.loadReplay(replayWithThemeChanges);
+            const themes: string[] = [];
+            const onComplete = vi.fn();
+            
+            player.startPlayback(() => {}, onComplete, (theme) => themes.push(theme));
+            player.skipToEnd();
+            
+            expect(themes.length).toBe(3);
+            expect(themes[0]).toBe('light');
+            expect(themes[1]).toBe('blue');
+            expect(themes[2]).toBe('green');
             expect(onComplete).toHaveBeenCalled();
         });
     });
@@ -696,6 +800,77 @@ describe('Replay Integration Tests', () => {
             expect(appliedInputs.length).toBe(2);
             expect(appliedInputs[0]).toEqual({ frame: 0, direction: { x: 0, y: -1 } });
             expect(appliedInputs[1]).toEqual({ frame: 0, direction: { x: -1, y: 0 } });
+        });
+
+        it('should correctly record and replay theme changes at the right frames', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            // Start recording with dark theme
+            recorder.startRecording(
+                12345,
+                30,
+                30,
+                [{ x: 5, y: 5 }],
+                { x: 1, y: 0 },
+                75,
+                'dark'
+            );
+            
+            // Frame 0 - no theme change
+            recorder.advanceFrame(); // Now at frame 1
+            
+            // Frame 1 - user changes theme to light
+            recorder.recordThemeChange('light');
+            recorder.advanceFrame(); // Now at frame 2
+            
+            // Frame 2 - no change
+            recorder.advanceFrame(); // Now at frame 3
+            
+            // Frame 3 - user changes theme to blue
+            recorder.recordThemeChange('blue');
+            recorder.advanceFrame(); // Now at frame 4
+            
+            // Game ends
+            const replayData = recorder.stopRecording(50);
+            
+            // Verify recorded data
+            expect(replayData.theme).toBe('dark');
+            expect(replayData.themeChanges!.length).toBe(2);
+            expect(replayData.themeChanges![0]).toEqual({ frame: 1, theme: 'light' });
+            expect(replayData.themeChanges![1]).toEqual({ frame: 3, theme: 'blue' });
+            
+            // Now playback
+            player.loadReplay(replayData);
+            
+            const appliedThemes: Array<{ frame: number; theme: string }> = [];
+            player.startPlayback(
+                () => {},
+                () => {},
+                (theme) => appliedThemes.push({ frame: player.getCurrentFrame(), theme })
+            );
+            
+            // Simulate playback frames - same loop structure as recording
+            // Frame 0
+            player.processFrame();
+            expect(appliedThemes.length).toBe(0); // No theme change at frame 0
+            player.advanceFrame(); // Now at frame 1
+            
+            // Frame 1 - should apply 'light' theme
+            player.processFrame();
+            expect(appliedThemes.length).toBe(1);
+            expect(appliedThemes[0]).toEqual({ frame: 1, theme: 'light' });
+            player.advanceFrame(); // Now at frame 2
+            
+            // Frame 2 - no theme change
+            player.processFrame();
+            expect(appliedThemes.length).toBe(1);
+            player.advanceFrame(); // Now at frame 3
+            
+            // Frame 3 - should apply 'blue' theme
+            player.processFrame();
+            expect(appliedThemes.length).toBe(2);
+            expect(appliedThemes[1]).toEqual({ frame: 3, theme: 'blue' });
         });
     });
 });

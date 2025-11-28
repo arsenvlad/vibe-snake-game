@@ -71,6 +71,11 @@ export class Game {
         this.currentTheme = theme;
         this.renderer.setTheme(themes[theme]);
         this.draw();
+
+        // Record theme change during gameplay (only in live play mode, not replay)
+        if (this.isRunning && !this.isReplayMode && this.replayRecorder.getIsRecording()) {
+            this.replayRecorder.recordThemeChange(theme);
+        }
     }
 
     setSpeed(speedPercent: number) {
@@ -128,7 +133,6 @@ export class Game {
         // Record input for replay only if direction was accepted (not a 180-degree turn)
         // and only in live play mode, not replay or auto
         if (accepted && !this.isReplayMode && !this.isAuto) {
-            const frame = this.replayRecorder.getCurrentFrame();
             this.replayRecorder.recordInput(direction);
         }
     }
@@ -568,14 +572,9 @@ export class Game {
         // Set speed from replay
         this.setSpeed(replayData.speedPercent);
 
-        // Apply theme from replay if available
+        // Apply initial theme from replay if available (directly without recording)
         if (replayData.theme) {
-            this.setTheme(replayData.theme as ThemeName);
-            // Also update the theme selector UI
-            const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
-            if (themeSelect) {
-                themeSelect.value = replayData.theme;
-            }
+            this.applyThemeForReplay(replayData.theme as ThemeName);
         }
 
         // Load replay into player
@@ -583,7 +582,8 @@ export class Game {
 
         this.replayPlayer.startPlayback(
             (direction) => this.snake.setDirection(direction),
-            () => this.onReplayComplete()
+            () => this.onReplayComplete(),
+            (theme) => this.applyThemeForReplay(theme as ThemeName)
         );
 
         // Update UI
@@ -595,6 +595,25 @@ export class Game {
         this.lastTime = performance.now();
         this.dropCounter = 0;
         requestAnimationFrame((t) => this.update(t));
+    }
+
+    /**
+     * Apply theme during replay playback (does not record)
+     */
+    private applyThemeForReplay(theme: ThemeName): void {
+        this.currentTheme = theme;
+        this.renderer.setTheme(themes[theme]);
+        
+        // Update the theme selector UI
+        const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
+        if (themeSelect) {
+            themeSelect.value = theme;
+        }
+        
+        // Update CSS theme attribute
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        this.draw();
     }
 
     /**
