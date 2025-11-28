@@ -34,7 +34,10 @@ describe('themes', () => {
                 'snakeBodyStart',
                 'snakeBodyEnd',
                 'foodColor',
-                'foodGlow'
+                'foodGlow',
+                'obstacleStatic',
+                'obstacleMoving',
+                'obstacleTemporary'
             ];
 
             Object.entries(themes).forEach(([themeName, themeColors]) => {
