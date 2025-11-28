@@ -9,6 +9,16 @@ export interface ReplayInput {
 }
 
 /**
+ * Represents a theme change during gameplay
+ */
+export interface ReplayThemeChange {
+    /** Frame number when the theme change occurred */
+    frame: number;
+    /** The theme that was applied */
+    theme: string;
+}
+
+/**
  * Complete replay data for a gameplay session
  */
 export interface ReplayData {
@@ -31,8 +41,10 @@ export interface ReplayData {
     timestamp: number;
     /** Speed setting used (percentage 0-100) */
     speedPercent: number;
-    /** Theme used during the game */
+    /** Theme used at the start of the game */
     theme?: string;
+    /** Theme changes that occurred during gameplay */
+    themeChanges?: ReplayThemeChange[];
 }
 
 /**
@@ -57,6 +69,7 @@ const VECTOR_TO_DIRECTION: Record<string, ReplayInput['direction']> = {
  */
 export class ReplayRecorder {
     private inputs: ReplayInput[] = [];
+    private themeChanges: ReplayThemeChange[] = [];
     private currentFrame: number = 0;
     private seed: number = 0;
     private gridWidth: number = 0;
@@ -82,6 +95,7 @@ export class ReplayRecorder {
         theme: string = 'dark'
     ): void {
         this.inputs = [];
+        this.themeChanges = [];
         this.currentFrame = 0;
         this.seed = seed;
         this.gridWidth = gridWidth;
@@ -111,6 +125,18 @@ export class ReplayRecorder {
     }
 
     /**
+     * Record a theme change
+     */
+    recordThemeChange(theme: string): void {
+        if (!this.isRecording) return;
+        
+        this.themeChanges.push({
+            frame: this.currentFrame,
+            theme: theme
+        });
+    }
+
+    /**
      * Advance the frame counter (called on each game step)
      */
     advanceFrame(): void {
@@ -137,7 +163,8 @@ export class ReplayRecorder {
             finalScore: this.finalScore,
             timestamp: this.timestamp,
             speedPercent: this.speedPercent,
-            theme: this.theme
+            theme: this.theme,
+            themeChanges: [...this.themeChanges]
         };
     }
 
@@ -168,10 +195,12 @@ export class ReplayPlayer {
     private replayData: ReplayData | null = null;
     private currentFrame: number = 0;
     private inputIndex: number = 0;
+    private themeChangeIndex: number = 0;
     private isPlaying: boolean = false;
     private isPaused: boolean = false;
     private speed: PlaybackSpeed = 1;
     private onInputCallback: ((direction: { x: number; y: number }) => void) | null = null;
+    private onThemeChangeCallback: ((theme: string) => void) | null = null;
     private onCompleteCallback: (() => void) | null = null;
 
     /**
@@ -181,6 +210,7 @@ export class ReplayPlayer {
         this.replayData = data;
         this.currentFrame = 0;
         this.inputIndex = 0;
+        this.themeChangeIndex = 0;
         this.isPlaying = false;
         this.isPaused = false;
         this.speed = 1;
@@ -191,7 +221,8 @@ export class ReplayPlayer {
      */
     startPlayback(
         onInput: (direction: { x: number; y: number }) => void,
-        onComplete: () => void
+        onComplete: () => void,
+        onThemeChange?: (theme: string) => void
     ): void {
         if (!this.replayData) {
             console.warn('[PLAYBACK] startPlayback called but no replayData!');
@@ -200,8 +231,10 @@ export class ReplayPlayer {
         
         this.onInputCallback = onInput;
         this.onCompleteCallback = onComplete;
+        this.onThemeChangeCallback = onThemeChange ?? null;
         this.currentFrame = 0;
         this.inputIndex = 0;
+        this.themeChangeIndex = 0;
         this.isPlaying = true;
         this.isPaused = false;
     }
@@ -216,6 +249,20 @@ export class ReplayPlayer {
         }
 
         let lastDirection: { x: number; y: number } | null = null;
+
+        // Process ALL theme changes for the current frame
+        if (this.replayData.themeChanges) {
+            while (
+                this.themeChangeIndex < this.replayData.themeChanges.length &&
+                this.replayData.themeChanges[this.themeChangeIndex].frame === this.currentFrame
+            ) {
+                const themeChange = this.replayData.themeChanges[this.themeChangeIndex];
+                if (this.onThemeChangeCallback) {
+                    this.onThemeChangeCallback(themeChange.theme);
+                }
+                this.themeChangeIndex++;
+            }
+        }
 
         // Process ALL inputs for the current frame (not just the first one)
         while (
@@ -279,6 +326,17 @@ export class ReplayPlayer {
     skipToEnd(): void {
         if (!this.replayData || !this.isPlaying) return;
         
+        // Process all remaining theme changes
+        if (this.replayData.themeChanges) {
+            while (this.themeChangeIndex < this.replayData.themeChanges.length) {
+                const themeChange = this.replayData.themeChanges[this.themeChangeIndex];
+                if (this.onThemeChangeCallback) {
+                    this.onThemeChangeCallback(themeChange.theme);
+                }
+                this.themeChangeIndex++;
+            }
+        }
+
         // Process all remaining inputs
         while (this.inputIndex < this.replayData.inputs.length) {
             const input = this.replayData.inputs[this.inputIndex];
@@ -303,6 +361,7 @@ export class ReplayPlayer {
         this.isPaused = false;
         this.currentFrame = 0;
         this.inputIndex = 0;
+        this.themeChangeIndex = 0;
     }
 
     /**
