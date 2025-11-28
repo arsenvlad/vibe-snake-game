@@ -547,7 +547,7 @@ export class Game {
         this.currentSeed = replayData.seed;
         this.rng = new SeededRandom(this.currentSeed);
 
-        // Recreate initial game state
+        // Recreate initial game state - ORDER MUST MATCH reset() exactly for RNG consistency
         this.snake = new Snake(this.gridWidth, this.gridHeight);
         this.snake.segments = replayData.initialSnake.map(s => ({ ...s }));
         this.snake.direction = { ...replayData.initialDirection };
@@ -555,13 +555,11 @@ export class Game {
 
         this.food = new Food(this.gridWidth, this.gridHeight);
         this.food.setRng(this.rng);
-
-        // Initialize obstacle manager and special food for replay
         this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
         this.obstacleManager.setRng(this.rng);
+        this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
         this.specialFood.setRng(this.rng);
-        this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
         this.activePowerUp = null;
         this.updatePowerUpHUD();
