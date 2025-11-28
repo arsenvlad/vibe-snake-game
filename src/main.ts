@@ -246,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const history = game.getReplayHistory();
     const replay = history[index];
     if (replay) {
-      console.log(`[MAIN] Starting replay index ${index}, inputs:`, replay.inputs);
       toggleReplayHistory(false);
       game.startReplay(replay);
     }

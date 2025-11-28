@@ -204,7 +204,6 @@ export class ReplayPlayer {
         this.inputIndex = 0;
         this.isPlaying = true;
         this.isPaused = false;
-        console.log(`[PLAYBACK] Started playback. isPlaying=${this.isPlaying}, total inputs=${this.replayData.inputs.length}`);
     }
 
     /**
@@ -225,7 +224,6 @@ export class ReplayPlayer {
         ) {
             const input = this.replayData.inputs[this.inputIndex];
             const direction = DIRECTION_VECTORS[input.direction];
-            console.log(`[PLAYBACK] Frame ${this.currentFrame}: applying ${input.direction}`);
             if (this.onInputCallback && direction) {
                 this.onInputCallback(direction);
                 lastDirection = direction;

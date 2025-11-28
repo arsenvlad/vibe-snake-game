@@ -165,7 +165,6 @@ export class Game {
         // Generate new seed for deterministic food placement
         this.currentSeed = SeededRandom.generateSeed();
         this.rng = new SeededRandom(this.currentSeed);
-        console.log(`[RESET] New game with seed: ${this.currentSeed}`);
 
         this.snake = new Snake(this.gridWidth, this.gridHeight);
         this.food = new Food(this.gridWidth, this.gridHeight);
@@ -173,7 +172,6 @@ export class Game {
         this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
         this.obstacleManager.setRng(this.rng);
         this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
-        console.log(`[RESET] Initial food at (${this.food.x}, ${this.food.y}), snake head at (${this.snake.head.x}, ${this.snake.head.y})`);
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
         this.specialFood.setRng(this.rng);
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
@@ -304,11 +302,7 @@ export class Game {
     step() {
         // In replay mode, process replay inputs
         if (this.isReplayMode) {
-            const frame = this.replayPlayer.getCurrentFrame();
-            const applied = this.replayPlayer.processFrame();
-            if (applied) {
-                console.log(`[REPLAY STEP] Frame ${frame}: Applied direction`, applied, `Snake nextDir:`, this.snake.nextDirection);
-            }
+            this.replayPlayer.processFrame();
             this.replayPlayer.advanceFrame();
         } else {
             // For auto-pilot, calculate and record the move BEFORE advancing frame
@@ -369,10 +363,8 @@ export class Game {
 
         // Food check
         if (this.snake.head.x === this.food.x && this.snake.head.y === this.food.y) {
-            console.log(`[FOOD] Snake ate food at (${this.food.x}, ${this.food.y}). Score: ${this.score} -> ${this.score + 10}`);
             this.snake.grow();
             this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
-            console.log(`[FOOD] New food at (${this.food.x}, ${this.food.y})`);
             this.score += 10;
             this.updateScore();
             if (!this.isReplayMode) {
@@ -556,7 +548,6 @@ export class Game {
         // Create RNG with replay seed
         this.currentSeed = replayData.seed;
         this.rng = new SeededRandom(this.currentSeed);
-        console.log(`[REPLAY] Starting replay with seed: ${this.currentSeed}`);
 
         // Recreate initial game state - ORDER MUST MATCH reset() exactly for RNG consistency
         this.snake = new Snake(this.gridWidth, this.gridHeight);
@@ -569,7 +560,6 @@ export class Game {
         this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
         this.obstacleManager.setRng(this.rng);
         this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
-        console.log(`[REPLAY] Initial food at (${this.food.x}, ${this.food.y}), snake head at (${this.snake.head.x}, ${this.snake.head.y})`);
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
         this.specialFood.setRng(this.rng);
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
@@ -591,10 +581,7 @@ export class Game {
 
         // Load replay into player
         this.replayPlayer.loadReplay(replayData);
-        console.log(`[REPLAY] Loaded replay with ${replayData.inputs.length} inputs:`, replayData.inputs);
-        if (replayData.inputs.length === 0) {
-            console.warn('[REPLAY] WARNING: No inputs in replay data! The snake will just go straight.');
-        }
+
         this.replayPlayer.startPlayback(
             (direction) => this.snake.setDirection(direction),
             () => this.onReplayComplete()
