@@ -1,15 +1,23 @@
 import { Renderer } from './Renderer';
 import { Snake } from './Snake';
 import { Food } from './Food';
+import { SpecialFood, type PowerUpType, POWER_UP_CONFIGS } from './SpecialFood';
 import { AutoPilot } from './AutoPilot';
 import type { ThemeName } from './themes';
 import { themes, defaultTheme } from './themes';
 import { AudioManager } from '../audio/AudioManager';
 
+export interface ActivePowerUp {
+    type: PowerUpType;
+    startTime: number;
+    duration: number;
+}
+
 export class Game {
     private renderer: Renderer;
     private snake!: Snake;
     private food!: Food;
+    private specialFood!: SpecialFood;
     private autoPilot!: AutoPilot;
     private audio: AudioManager;
 
@@ -28,6 +36,8 @@ export class Game {
     private gridWidth: number;
     private gridHeight: number;
     private currentTheme: ThemeName = defaultTheme;
+
+    private activePowerUp: ActivePowerUp | null = null;
 
     constructor(canvas: HTMLCanvasElement) {
         this.renderer = new Renderer(canvas, this.gridSize, themes[this.currentTheme]);
@@ -109,7 +119,10 @@ export class Game {
         this.snake = new Snake(this.gridWidth, this.gridHeight);
         this.food = new Food(this.gridWidth, this.gridHeight);
         this.food.respawn(this.snake.segments);
-        this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight);
+        this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
+        this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
+        this.activePowerUp = null;
+        this.updatePowerUpHUD();
 
         // Initial draw
         this.draw();
@@ -154,7 +167,22 @@ export class Game {
         this.dropCounter += deltaTime;
 
         // Speed up as score increases
-        const currentInterval = Math.max(50, this.baseDropInterval - this.score * 2);
+        let currentInterval = Math.max(50, this.baseDropInterval - this.score * 2);
+
+        // Apply power-up effects to interval
+        if (this.activePowerUp) {
+            if (this.activePowerUp.type === 'speed_boost') {
+                currentInterval = currentInterval * 0.6; // 40% faster
+            } else if (this.activePowerUp.type === 'slow_motion') {
+                currentInterval = currentInterval * 1.5; // 50% slower
+            }
+        }
+
+        // Update special food
+        this.specialFood.update(time);
+
+        // Update active power-up
+        this.updateActivePowerUp(time);
 
         if (this.dropCounter > currentInterval) {
             this.step();
@@ -165,6 +193,40 @@ export class Game {
         requestAnimationFrame((t) => this.update(t));
     }
 
+    private updateActivePowerUp(currentTime: number) {
+        if (!this.activePowerUp) return;
+
+        const elapsed = currentTime - this.activePowerUp.startTime;
+        if (elapsed >= this.activePowerUp.duration) {
+            this.activePowerUp = null;
+            this.updatePowerUpHUD();
+        } else {
+            this.updatePowerUpHUD();
+        }
+    }
+
+    private updatePowerUpHUD() {
+        const container = document.getElementById('powerup-indicator');
+        if (!container) return;
+
+        if (!this.activePowerUp) {
+            container.classList.remove('active');
+            container.innerHTML = '';
+            return;
+        }
+
+        const config = POWER_UP_CONFIGS[this.activePowerUp.type];
+        const currentTime = performance.now();
+        const remaining = Math.max(0, this.activePowerUp.duration - (currentTime - this.activePowerUp.startTime));
+        const remainingSeconds = Math.ceil(remaining / 1000);
+
+        container.classList.add('active');
+        container.innerHTML = `
+            <span class="powerup-name" style="color: ${config.color}">${config.displayName}</span>
+            <span class="powerup-timer">${remainingSeconds}s</span>
+        `;
+    }
+
     step() {
         if (this.isAuto) {
             const nextMove = this.autoPilot.getNextMove();
@@ -173,13 +235,20 @@ export class Game {
 
         this.snake.move();
 
+        // Check invincibility status
+        const isInvincible = this.activePowerUp?.type === 'invincibility';
+
         // Collision checks
         if (this.snake.checkCollision()) {
-            this.gameOver();
-            return;
+            if (!isInvincible) {
+                this.gameOver();
+                return;
+            }
+            // If invincible and hit wall, wrap around
+            this.handleWrapAround();
         }
 
-        // Food check
+        // Regular food check
         if (this.snake.head.x === this.food.x && this.snake.head.y === this.food.y) {
             this.snake.grow();
             this.food.respawn(this.snake.segments);
@@ -187,13 +256,67 @@ export class Game {
             this.updateScore();
             this.tryUpdateHighScore();
             this.audio.play('eat');
+
+            // Try to spawn special food
+            if (this.specialFood.shouldSpawn()) {
+                this.specialFood.spawn(this.snake.segments, this.food.x, this.food.y);
+            }
         }
+
+        // Special food check
+        if (this.specialFood.isActive && 
+            this.snake.head.x === this.specialFood.x && 
+            this.snake.head.y === this.specialFood.y) {
+            this.collectSpecialFood();
+        }
+    }
+
+    private handleWrapAround() {
+        const head = this.snake.head;
+        if (head.x < 0) head.x = this.gridWidth - 1;
+        else if (head.x >= this.gridWidth) head.x = 0;
+        if (head.y < 0) head.y = this.gridHeight - 1;
+        else if (head.y >= this.gridHeight) head.y = 0;
+    }
+
+    private collectSpecialFood() {
+        const config = this.specialFood.getConfig();
+        
+        // Add points bonus
+        this.score += config.pointsBonus;
+        this.updateScore();
+        this.tryUpdateHighScore();
+
+        // Play power-up sound
+        this.audio.play('powerup');
+
+        // Apply power-up effect (replaces any existing power-up)
+        if (config.duration > 0) {
+            this.activePowerUp = {
+                type: config.type,
+                startTime: performance.now(),
+                duration: config.duration
+            };
+            this.updatePowerUpHUD();
+        }
+
+        // Despawn the special food
+        this.specialFood.despawn();
     }
 
     draw() {
         this.renderer.clear();
         if (this.food) this.renderer.drawFood(this.food.x, this.food.y);
-        if (this.snake) this.renderer.drawSnake(this.snake.segments);
+        if (this.specialFood?.isActive) {
+            this.renderer.drawSpecialFood(
+                this.specialFood.x, 
+                this.specialFood.y, 
+                this.specialFood.type, 
+                this.specialFood.animationPhase
+            );
+        }
+        const isInvincible = this.activePowerUp?.type === 'invincibility';
+        if (this.snake) this.renderer.drawSnake(this.snake.segments, isInvincible);
     }
 
     updateScore() {
@@ -229,6 +352,8 @@ export class Game {
     gameOver() {
         this.isRunning = false;
         this.audio.play('die');
+        this.activePowerUp = null;
+        this.updatePowerUpHUD();
 
         if (this.isAuto) {
             setTimeout(() => {
