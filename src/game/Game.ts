@@ -128,7 +128,6 @@ export class Game {
         // Record input for replay only if direction was accepted (not a 180-degree turn)
         // and only in live play mode, not replay or auto
         if (accepted && !this.isReplayMode && !this.isAuto) {
-            const frame = this.replayRecorder.getCurrentFrame();
             this.replayRecorder.recordInput(direction);
         }
     }
