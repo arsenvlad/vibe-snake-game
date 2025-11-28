@@ -61,6 +61,18 @@
   --muted-text: #93c5fd;
 }
 
+:root[data-theme='purple'] {
+  --bg-color: #1a0a2e;
+  --text-color: #f3e8ff;
+  --copilot-primary: #a855f7;
+  --copilot-gradient: linear-gradient(135deg, #a855f7, #9333ea, #7c3aed);
+  --grid-color: #2d1b4e;
+  --canvas-bg: #1a0a2e;
+  --ui-bg: rgba(26, 10, 46, 0.9);
+  --border-color: #6b21a8;
+  --muted-text: #c4b5fd;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-color);
