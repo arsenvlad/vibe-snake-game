@@ -54,6 +54,17 @@
         <div id="ui-layer" class="ui-overlay">
           <div id="auto-badge" class="auto-badge">AUTO PILOT ACTIVE</div>
           <div id="pause-badge" class="pause-badge">PAUSED</div>
+          <div id="replay-badge" class="replay-badge">WATCHING REPLAY</div>
+          <div id="powerup-indicator" class="powerup-indicator"></div>
+
+          <div id="replay-controls" class="replay-controls hidden">
+            <button id="replay-pause-btn" class="replay-btn" title="Pause/Resume (P)">⏸️</button>
+            <button id="speed-0.5x-btn" class="replay-btn speed-btn" title="0.5x Speed">0.5x</button>
+            <button id="speed-1x-btn" class="replay-btn speed-btn active" title="1x Speed">1x</button>
+            <button id="speed-2x-btn" class="replay-btn speed-btn" title="2x Speed">2x</button>
+            <button id="skip-end-btn" class="replay-btn" title="Skip to End">⏭️</button>
+            <button id="stop-replay-btn" class="replay-btn" title="Stop Replay">⏹️</button>
+          </div>
           <div id="powerup-indicator" class="powerup-indicator"></div>
 
           <div id="start-screen" class="start-screen">
@@ -62,12 +73,26 @@
             <p>Press 'A' for Auto Pilot</p>
             <p>Press 'P' to Pause</p>
             <button id="start-btn" class="btn">Start Game</button>
+            <button id="watch-best-replay-btn" class="btn btn-secondary hidden">Watch Best Replay</button>
           </div>
 
           <div id="game-over-screen" class="start-screen hidden">
             <h1>Game Over</h1>
             <p>Score: <span id="final-score">0</span></p>
-            <button id="restart-btn" class="btn">Play Again</button>
+            <p id="new-high-score-label" class="new-high-score hidden">🏆 New High Score!</p>
+            <div class="game-over-buttons">
+              <button id="restart-btn" class="btn">Play Again</button>
+              <button id="watch-replay-btn" class="btn btn-secondary hidden">Watch Replay</button>
+            </div>
+          </div>
+
+          <div id="replay-complete-screen" class="start-screen hidden">
+            <h1>Replay Complete</h1>
+            <p>Final Score: <span id="replay-final-score">0</span></p>
+            <div class="replay-complete-buttons">
+              <button id="replay-play-again-btn" class="btn">Play Game</button>
+              <button id="replay-watch-again-btn" class="btn btn-secondary">Watch Again</button>
+            </div>
           </div>
         </div>
       </div>

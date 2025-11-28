@@ -1,6 +1,7 @@
 import { Game } from './game/Game'
 import type { ThemeName } from './game/themes'
 import { themes, defaultTheme } from './game/themes'
+import type { PlaybackSpeed } from './game/Replay'
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -13,6 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const restartBtn = document.getElementById('restart-btn');
   const startScreen = document.getElementById('start-screen');
   const gameOverScreen = document.getElementById('game-over-screen');
+
+  // Replay UI elements
+  const watchReplayBtn = document.getElementById('watch-replay-btn');
+  const watchBestReplayBtn = document.getElementById('watch-best-replay-btn');
+  const replayPauseBtn = document.getElementById('replay-pause-btn');
+  const speed05xBtn = document.getElementById('speed-0.5x-btn');
+  const speed1xBtn = document.getElementById('speed-1x-btn');
+  const speed2xBtn = document.getElementById('speed-2x-btn');
+  const skipEndBtn = document.getElementById('skip-end-btn');
+  const stopReplayBtn = document.getElementById('stop-replay-btn');
+  const replayCompleteScreen = document.getElementById('replay-complete-screen');
+  const replayPlayAgainBtn = document.getElementById('replay-play-again-btn');
+  const replayWatchAgainBtn = document.getElementById('replay-watch-again-btn');
 
   const applyTheme = (theme: ThemeName) => {
     const validatedTheme: ThemeName = themes[theme] ? theme : defaultTheme;
@@ -56,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
     thicknessSlider.value = initialThickness.toString();
   }
 
+  // Update watch best replay button visibility on load
+  game.updateWatchBestReplayButton();
+
   startBtn?.addEventListener('click', () => {
     startScreen?.classList.add('hidden');
     game.start();
@@ -79,5 +96,63 @@ document.addEventListener('DOMContentLoaded', () => {
   thicknessSlider?.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
     applyThickness(parseInt(target.value, 10));
+  });
+
+  // ================== REPLAY EVENT HANDLERS ==================
+
+  // Watch last replay button (game over screen)
+  watchReplayBtn?.addEventListener('click', () => {
+    gameOverScreen?.classList.add('hidden');
+    game.watchLastReplay();
+  });
+
+  // Watch best replay button (start screen)
+  watchBestReplayBtn?.addEventListener('click', () => {
+    startScreen?.classList.add('hidden');
+    game.watchHighScoreReplay();
+  });
+
+  // Replay pause/resume button
+  replayPauseBtn?.addEventListener('click', () => {
+    game.toggleReplayPause();
+  });
+
+  // Speed buttons
+  const setReplaySpeed = (speed: PlaybackSpeed) => {
+    game.setReplaySpeed(speed);
+    // Update button active states
+    speed05xBtn?.classList.remove('active');
+    speed1xBtn?.classList.remove('active');
+    speed2xBtn?.classList.remove('active');
+    if (speed === 0.5) speed05xBtn?.classList.add('active');
+    else if (speed === 1) speed1xBtn?.classList.add('active');
+    else if (speed === 2) speed2xBtn?.classList.add('active');
+  };
+
+  speed05xBtn?.addEventListener('click', () => setReplaySpeed(0.5));
+  speed1xBtn?.addEventListener('click', () => setReplaySpeed(1));
+  speed2xBtn?.addEventListener('click', () => setReplaySpeed(2));
+
+  // Skip to end button
+  skipEndBtn?.addEventListener('click', () => {
+    game.skipReplayToEnd();
+  });
+
+  // Stop replay button
+  stopReplayBtn?.addEventListener('click', () => {
+    game.stopReplay();
+    startScreen?.classList.remove('hidden');
+  });
+
+  // Replay complete screen - Play Again
+  replayPlayAgainBtn?.addEventListener('click', () => {
+    replayCompleteScreen?.classList.add('hidden');
+    game.start();
+  });
+
+  // Replay complete screen - Watch Again
+  replayWatchAgainBtn?.addEventListener('click', () => {
+    replayCompleteScreen?.classList.add('hidden');
+    game.watchLastReplay();
   });
 });
