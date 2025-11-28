@@ -1,6 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReplayRecorder, ReplayPlayer, ReplayStorage, type ReplayData } from './Replay';
 
+// Shared localStorage mock factory for tests
+function createLocalStorageMock() {
+    let store: Record<string, string> = {};
+    return {
+        getItem: (key: string) => store[key] ?? null,
+        setItem: (key: string, value: string) => { store[key] = value; },
+        removeItem: (key: string) => { delete store[key]; },
+        clear: () => { store = {}; }
+    };
+}
+
 describe('ReplayRecorder', () => {
     let recorder: ReplayRecorder;
 
@@ -263,16 +274,8 @@ describe('ReplayStorage', () => {
         speedPercent: 75
     };
 
-    // Mock localStorage for Node.js test environment
-    const localStorageMock = (() => {
-        let store: Record<string, string> = {};
-        return {
-            getItem: (key: string) => store[key] ?? null,
-            setItem: (key: string, value: string) => { store[key] = value; },
-            removeItem: (key: string) => { delete store[key]; },
-            clear: () => { store = {}; }
-        };
-    })();
+    // Use shared localStorage mock
+    const localStorageMock = createLocalStorageMock();
 
     beforeEach(() => {
         // Setup global localStorage mock
@@ -368,9 +371,168 @@ describe('ReplayStorage', () => {
             expect(ReplayStorage.importReplay(incompleteData)).toBeNull();
         });
     });
+
+    describe('deleteReplayFromHistory', () => {
+        it('should correctly remove an item at a valid index', () => {
+            // Save 3 replays to history
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            const replay3 = { ...sampleReplay, finalScore: 300, timestamp: 3 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            ReplayStorage.saveReplayToHistory(replay3);
+            
+            // History should be [replay3, replay2, replay1] (latest first)
+            let history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(3);
+            expect(history[0].finalScore).toBe(300);
+            
+            // Delete the middle item (index 1 = replay2)
+            ReplayStorage.deleteReplayFromHistory(1);
+            
+            history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(2);
+            expect(history[0].finalScore).toBe(300);
+            expect(history[1].finalScore).toBe(100);
+        });
+
+        it('should correctly remove the first item', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            
+            // Delete first item (index 0)
+            ReplayStorage.deleteReplayFromHistory(0);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should correctly remove the last item', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            
+            // Delete last item (index 1)
+            ReplayStorage.deleteReplayFromHistory(1);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(200);
+        });
+
+        it('should handle negative index gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Negative index should do nothing
+            ReplayStorage.deleteReplayFromHistory(-1);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should handle out of bounds index gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Index out of bounds should do nothing
+            ReplayStorage.deleteReplayFromHistory(5);
+            ReplayStorage.deleteReplayFromHistory(100);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should handle deleting from empty history gracefully', () => {
+            // No replays in history
+            ReplayStorage.deleteReplayFromHistory(0);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(0);
+        });
+
+        it('should handle localStorage errors gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Mock localStorage.setItem to throw an error
+            vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+                throw new Error('Storage quota exceeded');
+            });
+            
+            // Should not throw, just log warning
+            expect(() => ReplayStorage.deleteReplayFromHistory(0)).not.toThrow();
+            
+            // Restore original setItem
+            vi.mocked(localStorage.setItem).mockRestore();
+        });
+    });
+
+    describe('clearReplayHistory', () => {
+        it('should remove all history entries', () => {
+            // Save multiple replays
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            const replay3 = { ...sampleReplay, finalScore: 300, timestamp: 3 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            ReplayStorage.saveReplayToHistory(replay3);
+            
+            expect(ReplayStorage.loadReplayHistory().length).toBe(3);
+            
+            // Clear all history
+            ReplayStorage.clearReplayHistory();
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(0);
+            expect(history).toEqual([]);
+        });
+
+        it('should handle clearing empty history gracefully', () => {
+            // History is already empty
+            expect(() => ReplayStorage.clearReplayHistory()).not.toThrow();
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(0);
+        });
+
+        it('should handle localStorage errors gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Mock localStorage.removeItem to throw an error
+            vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+                throw new Error('Storage error');
+            });
+            
+            // Should not throw, just log warning
+            expect(() => ReplayStorage.clearReplayHistory()).not.toThrow();
+            
+            // Restore original removeItem
+            vi.mocked(localStorage.removeItem).mockRestore();
+        });
+    });
 });
 
 describe('Replay Integration Tests', () => {
+    // Use shared localStorage mock
+    const localStorageMock = createLocalStorageMock();
+
+    beforeEach(() => {
+        vi.stubGlobal('localStorage', localStorageMock);
+        localStorageMock.clear();
+    });
+
     describe('Full record-playback cycle', () => {
         it('should correctly replay all recorded inputs at the right frames', () => {
             const recorder = new ReplayRecorder();
