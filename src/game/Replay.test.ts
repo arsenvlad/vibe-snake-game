@@ -1,6 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReplayRecorder, ReplayPlayer, ReplayStorage, type ReplayData } from './Replay';
 
+// Shared localStorage mock factory for tests
+function createLocalStorageMock() {
+    let store: Record<string, string> = {};
+    return {
+        getItem: (key: string) => store[key] ?? null,
+        setItem: (key: string, value: string) => { store[key] = value; },
+        removeItem: (key: string) => { delete store[key]; },
+        clear: () => { store = {}; }
+    };
+}
+
 describe('ReplayRecorder', () => {
     let recorder: ReplayRecorder;
 
@@ -263,16 +274,8 @@ describe('ReplayStorage', () => {
         speedPercent: 75
     };
 
-    // Mock localStorage for Node.js test environment
-    const localStorageMock = (() => {
-        let store: Record<string, string> = {};
-        return {
-            getItem: (key: string) => store[key] ?? null,
-            setItem: (key: string, value: string) => { store[key] = value; },
-            removeItem: (key: string) => { delete store[key]; },
-            clear: () => { store = {}; }
-        };
-    })();
+    // Use shared localStorage mock
+    const localStorageMock = createLocalStorageMock();
 
     beforeEach(() => {
         // Setup global localStorage mock
@@ -323,8 +326,8 @@ describe('ReplayStorage', () => {
     });
 
     describe('saveReplayToHistory and loadReplayHistory', () => {
-        it('should save and return history capped at 10 entries', () => {
-            const replays = Array.from({ length: 12 }).map((_, index) => ({
+        it('should save and return history capped at 50 entries', () => {
+            const replays = Array.from({ length: 55 }).map((_, index) => ({
                 ...sampleReplay,
                 finalScore: index,
                 timestamp: index
@@ -333,9 +336,9 @@ describe('ReplayStorage', () => {
             replays.forEach(replay => ReplayStorage.saveReplayToHistory(replay));
 
             const history = ReplayStorage.loadReplayHistory();
-            expect(history.length).toBe(10);
-            expect(history[0].finalScore).toBe(11);
-            expect(history[9].finalScore).toBe(2);
+            expect(history.length).toBe(50);
+            expect(history[0].finalScore).toBe(54);
+            expect(history[49].finalScore).toBe(5);
         });
 
         it('should return empty history when nothing saved', () => {
@@ -366,6 +369,333 @@ describe('ReplayStorage', () => {
         it('should return null for valid JSON but missing required fields', () => {
             const incompleteData = btoa(encodeURIComponent(JSON.stringify({ version: 1 })));
             expect(ReplayStorage.importReplay(incompleteData)).toBeNull();
+        });
+    });
+
+    describe('deleteReplayFromHistory', () => {
+        it('should correctly remove an item at a valid index', () => {
+            // Save 3 replays to history
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            const replay3 = { ...sampleReplay, finalScore: 300, timestamp: 3 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            ReplayStorage.saveReplayToHistory(replay3);
+            
+            // History should be [replay3, replay2, replay1] (latest first)
+            let history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(3);
+            expect(history[0].finalScore).toBe(300);
+            
+            // Delete the middle item (index 1 = replay2)
+            ReplayStorage.deleteReplayFromHistory(1);
+            
+            history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(2);
+            expect(history[0].finalScore).toBe(300);
+            expect(history[1].finalScore).toBe(100);
+        });
+
+        it('should correctly remove the first item', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            
+            // Delete first item (index 0)
+            ReplayStorage.deleteReplayFromHistory(0);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should correctly remove the last item', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            
+            // Delete last item (index 1)
+            ReplayStorage.deleteReplayFromHistory(1);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(200);
+        });
+
+        it('should handle negative index gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Negative index should do nothing
+            ReplayStorage.deleteReplayFromHistory(-1);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should handle out of bounds index gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Index out of bounds should do nothing
+            ReplayStorage.deleteReplayFromHistory(5);
+            ReplayStorage.deleteReplayFromHistory(100);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should handle deleting from empty history gracefully', () => {
+            // No replays in history
+            ReplayStorage.deleteReplayFromHistory(0);
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(0);
+        });
+
+        it('should handle localStorage errors gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Mock localStorage.setItem to throw an error
+            vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+                throw new Error('Storage quota exceeded');
+            });
+            
+            // Should not throw, just log warning
+            expect(() => ReplayStorage.deleteReplayFromHistory(0)).not.toThrow();
+            
+            // Restore original setItem
+            vi.mocked(localStorage.setItem).mockRestore();
+        });
+    });
+
+    describe('clearReplayHistory', () => {
+        it('should remove all history entries', () => {
+            // Save multiple replays
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            const replay2 = { ...sampleReplay, finalScore: 200, timestamp: 2 };
+            const replay3 = { ...sampleReplay, finalScore: 300, timestamp: 3 };
+            
+            ReplayStorage.saveReplayToHistory(replay1);
+            ReplayStorage.saveReplayToHistory(replay2);
+            ReplayStorage.saveReplayToHistory(replay3);
+            
+            expect(ReplayStorage.loadReplayHistory().length).toBe(3);
+            
+            // Clear all history
+            ReplayStorage.clearReplayHistory();
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(0);
+            expect(history).toEqual([]);
+        });
+
+        it('should handle clearing empty history gracefully', () => {
+            // History is already empty
+            expect(() => ReplayStorage.clearReplayHistory()).not.toThrow();
+            
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(0);
+        });
+
+        it('should handle localStorage errors gracefully', () => {
+            const replay1 = { ...sampleReplay, finalScore: 100, timestamp: 1 };
+            ReplayStorage.saveReplayToHistory(replay1);
+            
+            // Mock localStorage.removeItem to throw an error
+            vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+                throw new Error('Storage error');
+            });
+            
+            // Should not throw, just log warning
+            expect(() => ReplayStorage.clearReplayHistory()).not.toThrow();
+            
+            // Restore original removeItem
+            vi.mocked(localStorage.removeItem).mockRestore();
+        });
+    });
+});
+
+describe('Replay Integration Tests', () => {
+    // Use shared localStorage mock
+    const localStorageMock = createLocalStorageMock();
+
+    beforeEach(() => {
+        vi.stubGlobal('localStorage', localStorageMock);
+        localStorageMock.clear();
+    });
+
+    describe('Full record-playback cycle', () => {
+        it('should correctly replay all recorded inputs at the right frames', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            // Simulate a game session
+            // Start recording
+            recorder.startRecording(
+                12345,
+                30,
+                30,
+                [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }],
+                { x: 1, y: 0 },
+                75,
+                'dark'
+            );
+            
+            // Simulate game frames with inputs
+            // Frame 0 - no input yet, just advance
+            recorder.advanceFrame(); // Now at frame 1
+            
+            // Frame 1 - user presses down
+            recorder.recordInput({ x: 0, y: 1 }); // Recorded at frame 1
+            recorder.advanceFrame(); // Now at frame 2
+            
+            // Frame 2 - no input
+            recorder.advanceFrame(); // Now at frame 3
+            
+            // Frame 3 - user presses left
+            recorder.recordInput({ x: -1, y: 0 }); // Recorded at frame 3
+            recorder.advanceFrame(); // Now at frame 4
+            
+            // Frame 4 - user presses up
+            recorder.recordInput({ x: 0, y: -1 }); // Recorded at frame 4
+            recorder.advanceFrame(); // Now at frame 5
+            
+            // Game ends
+            const replayData = recorder.stopRecording(50);
+            
+            // Verify recorded data
+            expect(replayData.inputs.length).toBe(3);
+            expect(replayData.inputs[0]).toEqual({ frame: 1, direction: 'down' });
+            expect(replayData.inputs[1]).toEqual({ frame: 3, direction: 'left' });
+            expect(replayData.inputs[2]).toEqual({ frame: 4, direction: 'up' });
+            
+            // Now playback
+            player.loadReplay(replayData);
+            
+            const appliedInputs: Array<{ frame: number; direction: { x: number; y: number } }> = [];
+            player.startPlayback(
+                (direction) => {
+                    appliedInputs.push({ frame: player.getCurrentFrame(), direction });
+                },
+                () => {}
+            );
+            
+            // Simulate playback frames - same loop structure as recording
+            // Frame 0
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 1
+            
+            // Frame 1 - should apply 'down'
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 2
+            
+            // Frame 2 - no input
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 3
+            
+            // Frame 3 - should apply 'left'
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 4
+            
+            // Frame 4 - should apply 'up'
+            player.processFrame();
+            player.advanceFrame(); // Now at frame 5
+            
+            // Verify playback applied inputs at correct frames
+            expect(appliedInputs.length).toBe(3);
+            expect(appliedInputs[0]).toEqual({ frame: 1, direction: { x: 0, y: 1 } });
+            expect(appliedInputs[1]).toEqual({ frame: 3, direction: { x: -1, y: 0 } });
+            expect(appliedInputs[2]).toEqual({ frame: 4, direction: { x: 0, y: -1 } });
+        });
+        
+        it('should handle input recorded before first advanceFrame', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            
+            // Input before any frame advance - recorded at frame 0
+            recorder.recordInput({ x: 0, y: -1 });
+            recorder.advanceFrame();
+            
+            const replayData = recorder.stopRecording(10);
+            expect(replayData.inputs[0].frame).toBe(0);
+            
+            // Playback
+            player.loadReplay(replayData);
+            const appliedInputs: Array<{ frame: number; direction: { x: number; y: number } }> = [];
+            player.startPlayback(
+                (direction) => appliedInputs.push({ frame: player.getCurrentFrame(), direction }),
+                () => {}
+            );
+            
+            // First processFrame at frame 0 should apply the input
+            player.processFrame();
+            expect(appliedInputs.length).toBe(1);
+            expect(appliedInputs[0].frame).toBe(0);
+        });
+        
+        it('should store and retrieve replay from history correctly', () => {
+            const recorder = new ReplayRecorder();
+            
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            recorder.recordInput({ x: 0, y: 1 });
+            recorder.advanceFrame();
+            recorder.recordInput({ x: -1, y: 0 });
+            const replayData = recorder.stopRecording(100);
+            
+            // Save to history
+            ReplayStorage.saveReplayToHistory(replayData);
+            
+            // Load from history
+            const history = ReplayStorage.loadReplayHistory();
+            expect(history.length).toBe(1);
+            expect(history[0].inputs.length).toBe(2);
+            expect(history[0].inputs[0].direction).toBe('down');
+            expect(history[0].inputs[1].direction).toBe('left');
+            expect(history[0].finalScore).toBe(100);
+        });
+
+        it('should handle multiple inputs at the same frame', () => {
+            const recorder = new ReplayRecorder();
+            const player = new ReplayPlayer();
+            
+            recorder.startRecording(12345, 30, 30, [{ x: 5, y: 5 }], { x: 1, y: 0 }, 75, 'dark');
+            
+            // Multiple inputs at frame 0 (user pressed keys rapidly)
+            recorder.recordInput({ x: 0, y: -1 }); // up
+            recorder.recordInput({ x: -1, y: 0 }); // left (last one should win)
+            recorder.advanceFrame();
+            
+            const replayData = recorder.stopRecording(10);
+            
+            // Both inputs should be recorded
+            expect(replayData.inputs.length).toBe(2);
+            expect(replayData.inputs[0]).toEqual({ frame: 0, direction: 'up' });
+            expect(replayData.inputs[1]).toEqual({ frame: 0, direction: 'left' });
+            
+            // Playback should apply BOTH inputs (last one wins due to setDirection behavior)
+            player.loadReplay(replayData);
+            const appliedInputs: Array<{ frame: number; direction: { x: number; y: number } }> = [];
+            player.startPlayback(
+                (direction) => appliedInputs.push({ frame: player.getCurrentFrame(), direction }),
+                () => {}
+            );
+            
+            // ProcessFrame should apply BOTH inputs at frame 0
+            player.processFrame();
+            expect(appliedInputs.length).toBe(2);
+            expect(appliedInputs[0]).toEqual({ frame: 0, direction: { x: 0, y: -1 } });
+            expect(appliedInputs[1]).toEqual({ frame: 0, direction: { x: -1, y: 0 } });
         });
     });
 });

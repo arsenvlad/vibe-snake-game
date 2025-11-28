@@ -65,7 +65,6 @@
             <button id="skip-end-btn" class="replay-btn" title="Skip to End">⏭️</button>
             <button id="stop-replay-btn" class="replay-btn" title="Stop Replay">⏹️</button>
           </div>
-          <div id="powerup-indicator" class="powerup-indicator"></div>
 
           <div id="start-screen" class="start-screen">
             <h1>Snake Game</h1>
@@ -98,14 +97,16 @@
       </div>
 
       <div class="replay-history-bar">
-        <button id="replay-history-btn" class="btn btn-secondary">Replay History (R)</button>
         <div id="replay-history-panel" class="replay-history-panel hidden">
           <div class="replay-history-header">
             <div>
               <div class="replay-history-title">Recent Games</div>
-              <div class="replay-history-subtitle">Last 10 games are saved for replays.</div>
+              <div class="replay-history-subtitle">Last 50 games are saved. Press 'R' to toggle.</div>
             </div>
-            <button id="replay-history-close-btn" class="icon-btn" aria-label="Close history">✕</button>
+            <div class="replay-history-actions">
+              <button id="clear-all-history-btn" class="icon-btn" aria-label="Clear all history" title="Clear All">🗑️</button>
+              <button id="replay-history-close-btn" class="icon-btn" aria-label="Close history">✕</button>
+            </div>
           </div>
           <div id="replay-history-empty" class="history-empty">Play a game to start building history.</div>
           <ul id="replay-history-list" class="replay-history-list"></ul>

@@ -124,9 +124,11 @@ export class Game {
     }
 
     private handleDirectionInput(direction: { x: number; y: number }) {
-        this.snake.setDirection(direction);
-        // Record input for replay (only in live play mode, not replay or auto)
-        if (!this.isReplayMode && !this.isAuto) {
+        const accepted = this.snake.setDirection(direction);
+        // Record input for replay only if direction was accepted (not a 180-degree turn)
+        // and only in live play mode, not replay or auto
+        if (accepted && !this.isReplayMode && !this.isAuto) {
+            const frame = this.replayRecorder.getCurrentFrame();
             this.replayRecorder.recordInput(direction);
         }
     }
@@ -148,7 +150,8 @@ export class Game {
             this.gridHeight,
             this.snake.segments,
             this.snake.direction,
-            this.speedPercent
+            this.speedPercent,
+            this.currentTheme
         );
 
         requestAnimationFrame((t) => this.update(t));
@@ -301,19 +304,31 @@ export class Game {
             this.replayPlayer.processFrame();
             this.replayPlayer.advanceFrame();
         } else {
-            // Record frame advance for live gameplay
+            // For auto-pilot, calculate and record the move BEFORE advancing frame
+            // This ensures inputs are recorded at the correct frame for replay
+            if (this.isAuto) {
+                // Update autoPilot with current obstacle positions first
+                this.autoPilot.setObstacles(this.obstacleManager.getObstaclePositions());
+                
+                const nextMove = this.autoPilot.getNextMove();
+                if (nextMove) {
+                    const accepted = this.snake.setDirection(nextMove);
+                    if (accepted) {
+                        this.replayRecorder.recordInput(nextMove);
+                    }
+                }
+            }
+            
+            // Record frame advance for live gameplay  
             this.replayRecorder.advanceFrame();
         }
 
         // Update obstacles (for moving and temporary obstacles)
         this.obstacleManager.update();
 
-        // Update autoPilot with current obstacle positions
-        this.autoPilot.setObstacles(this.obstacleManager.getObstaclePositions());
-
-        if (this.isAuto && !this.isReplayMode) {
-            const nextMove = this.autoPilot.getNextMove();
-            if (nextMove) this.snake.setDirection(nextMove);
+        // Update autoPilot with current obstacle positions (for non-auto mode display)
+        if (!this.isAuto) {
+            this.autoPilot.setObstacles(this.obstacleManager.getObstaclePositions());
         }
 
         this.snake.move();
@@ -466,6 +481,7 @@ export class Game {
 
         // Stop recording and save replay
         const replayData = this.replayRecorder.stopRecording(this.score);
+        console.log(`[RECORD] Game over. Recorded ${replayData.inputs.length} inputs:`, replayData.inputs);
         ReplayStorage.saveLastReplay(replayData);
         ReplayStorage.saveReplayToHistory(replayData);
 
@@ -532,7 +548,7 @@ export class Game {
         this.currentSeed = replayData.seed;
         this.rng = new SeededRandom(this.currentSeed);
 
-        // Recreate initial game state
+        // Recreate initial game state - ORDER MUST MATCH reset() exactly for RNG consistency
         this.snake = new Snake(this.gridWidth, this.gridHeight);
         this.snake.segments = replayData.initialSnake.map(s => ({ ...s }));
         this.snake.direction = { ...replayData.initialDirection };
@@ -540,13 +556,11 @@ export class Game {
 
         this.food = new Food(this.gridWidth, this.gridHeight);
         this.food.setRng(this.rng);
-
-        // Initialize obstacle manager and special food for replay
         this.obstacleManager = new ObstacleManager(this.gridWidth, this.gridHeight);
         this.obstacleManager.setRng(this.rng);
+        this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
         this.specialFood = new SpecialFood(this.gridWidth, this.gridHeight);
         this.specialFood.setRng(this.rng);
-        this.food.respawn(this.snake.segments, this.obstacleManager.getObstaclePositions());
         this.autoPilot = new AutoPilot(this.snake, this.food, this.gridWidth, this.gridHeight, this.specialFood);
         this.activePowerUp = null;
         this.updatePowerUpHUD();
@@ -554,8 +568,19 @@ export class Game {
         // Set speed from replay
         this.setSpeed(replayData.speedPercent);
 
+        // Apply theme from replay if available
+        if (replayData.theme) {
+            this.setTheme(replayData.theme as ThemeName);
+            // Also update the theme selector UI
+            const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
+            if (themeSelect) {
+                themeSelect.value = replayData.theme;
+            }
+        }
+
         // Load replay into player
         this.replayPlayer.loadReplay(replayData);
+
         this.replayPlayer.startPlayback(
             (direction) => this.snake.setDirection(direction),
             () => this.onReplayComplete()
@@ -711,6 +736,20 @@ export class Game {
      */
     getReplayHistory(): ReplayData[] {
         return ReplayStorage.loadReplayHistory();
+    }
+
+    /**
+     * Delete a specific replay from history by index
+     */
+    deleteReplayFromHistory(index: number): void {
+        ReplayStorage.deleteReplayFromHistory(index);
+    }
+
+    /**
+     * Clear all replay history
+     */
+    clearReplayHistory(): void {
+        ReplayStorage.clearReplayHistory();
     }
 
     /**

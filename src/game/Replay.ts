@@ -31,6 +31,8 @@ export interface ReplayData {
     timestamp: number;
     /** Speed setting used (percentage 0-100) */
     speedPercent: number;
+    /** Theme used during the game */
+    theme?: string;
 }
 
 /**
@@ -64,6 +66,7 @@ export class ReplayRecorder {
     private finalScore: number = 0;
     private timestamp: number = 0;
     private speedPercent: number = 75;
+    private theme: string = 'dark';
     private isRecording: boolean = false;
 
     /**
@@ -75,7 +78,8 @@ export class ReplayRecorder {
         gridHeight: number,
         initialSnake: { x: number; y: number }[],
         initialDirection: { x: number; y: number },
-        speedPercent: number
+        speedPercent: number,
+        theme: string = 'dark'
     ): void {
         this.inputs = [];
         this.currentFrame = 0;
@@ -85,6 +89,7 @@ export class ReplayRecorder {
         this.initialSnake = initialSnake.map(s => ({ ...s }));
         this.initialDirection = { ...initialDirection };
         this.speedPercent = speedPercent;
+        this.theme = theme;
         this.timestamp = Date.now();
         this.isRecording = true;
     }
@@ -131,7 +136,8 @@ export class ReplayRecorder {
             inputs: [...this.inputs],
             finalScore: this.finalScore,
             timestamp: this.timestamp,
-            speedPercent: this.speedPercent
+            speedPercent: this.speedPercent,
+            theme: this.theme
         };
     }
 
@@ -140,6 +146,13 @@ export class ReplayRecorder {
      */
     getIsRecording(): boolean {
         return this.isRecording;
+    }
+
+    /**
+     * Get current frame number
+     */
+    getCurrentFrame(): number {
+        return this.currentFrame;
     }
 }
 
@@ -180,7 +193,10 @@ export class ReplayPlayer {
         onInput: (direction: { x: number; y: number }) => void,
         onComplete: () => void
     ): void {
-        if (!this.replayData) return;
+        if (!this.replayData) {
+            console.warn('[PLAYBACK] startPlayback called but no replayData!');
+            return;
+        }
         
         this.onInputCallback = onInput;
         this.onCompleteCallback = onComplete;
@@ -192,12 +208,16 @@ export class ReplayPlayer {
 
     /**
      * Process the current frame during playback
-     * Returns true if there are pending inputs for this frame
+     * Returns the last direction applied for this frame, or null if none
      */
     processFrame(): { x: number; y: number } | null {
-        if (!this.replayData || !this.isPlaying || this.isPaused) return null;
+        if (!this.replayData || !this.isPlaying || this.isPaused) {
+            return null;
+        }
 
-        // Check if there are inputs for the current frame
+        let lastDirection: { x: number; y: number } | null = null;
+
+        // Process ALL inputs for the current frame (not just the first one)
         while (
             this.inputIndex < this.replayData.inputs.length &&
             this.replayData.inputs[this.inputIndex].frame === this.currentFrame
@@ -206,12 +226,12 @@ export class ReplayPlayer {
             const direction = DIRECTION_VECTORS[input.direction];
             if (this.onInputCallback && direction) {
                 this.onInputCallback(direction);
+                lastDirection = direction;
             }
             this.inputIndex++;
-            return direction;
         }
 
-        return null;
+        return lastDirection;
     }
 
     /**
@@ -393,13 +413,13 @@ export class ReplayStorage {
     }
 
     /**
-     * Save replay to history (keeps last 10 entries)
+     * Save replay to history (keeps last 50 entries)
      */
     static saveReplayToHistory(data: ReplayData): void {
         if (typeof localStorage === 'undefined') return;
         try {
             const history = this.loadReplayHistory();
-            const newHistory = [data, ...history].slice(0, 10);
+            const newHistory = [data, ...history].slice(0, 50);
             localStorage.setItem(this.REPLAY_HISTORY_KEY, JSON.stringify(newHistory));
         } catch {
             console.warn('Failed to save replay history');
@@ -418,6 +438,34 @@ export class ReplayStorage {
             return Array.isArray(parsed) ? parsed as ReplayData[] : [];
         } catch {
             return [];
+        }
+    }
+
+    /**
+     * Delete a specific replay from history by index
+     */
+    static deleteReplayFromHistory(index: number): void {
+        if (typeof localStorage === 'undefined') return;
+        try {
+            const history = this.loadReplayHistory();
+            if (index >= 0 && index < history.length) {
+                history.splice(index, 1);
+                localStorage.setItem(this.REPLAY_HISTORY_KEY, JSON.stringify(history));
+            }
+        } catch {
+            console.warn('Failed to delete replay from history');
+        }
+    }
+
+    /**
+     * Clear all replay history
+     */
+    static clearReplayHistory(): void {
+        if (typeof localStorage === 'undefined') return;
+        try {
+            localStorage.removeItem(this.REPLAY_HISTORY_KEY);
+        } catch {
+            console.warn('Failed to clear replay history');
         }
     }
 
