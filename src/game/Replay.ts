@@ -147,6 +147,13 @@ export class ReplayRecorder {
     getIsRecording(): boolean {
         return this.isRecording;
     }
+
+    /**
+     * Get current frame number
+     */
+    getCurrentFrame(): number {
+        return this.currentFrame;
+    }
 }
 
 /**
@@ -186,7 +193,10 @@ export class ReplayPlayer {
         onInput: (direction: { x: number; y: number }) => void,
         onComplete: () => void
     ): void {
-        if (!this.replayData) return;
+        if (!this.replayData) {
+            console.warn('[PLAYBACK] startPlayback called but no replayData!');
+            return;
+        }
         
         this.onInputCallback = onInput;
         this.onCompleteCallback = onComplete;
@@ -194,6 +204,7 @@ export class ReplayPlayer {
         this.inputIndex = 0;
         this.isPlaying = true;
         this.isPaused = false;
+        console.log(`[PLAYBACK] Started playback. isPlaying=${this.isPlaying}, total inputs=${this.replayData.inputs.length}`);
     }
 
     /**
@@ -201,7 +212,9 @@ export class ReplayPlayer {
      * Returns the last direction applied for this frame, or null if none
      */
     processFrame(): { x: number; y: number } | null {
-        if (!this.replayData || !this.isPlaying || this.isPaused) return null;
+        if (!this.replayData || !this.isPlaying || this.isPaused) {
+            return null;
+        }
 
         let lastDirection: { x: number; y: number } | null = null;
 
@@ -212,6 +225,7 @@ export class ReplayPlayer {
         ) {
             const input = this.replayData.inputs[this.inputIndex];
             const direction = DIRECTION_VECTORS[input.direction];
+            console.log(`[PLAYBACK] Frame ${this.currentFrame}: applying ${input.direction}`);
             if (this.onInputCallback && direction) {
                 this.onInputCallback(direction);
                 lastDirection = direction;

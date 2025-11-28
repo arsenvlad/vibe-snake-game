@@ -124,9 +124,12 @@ export class Game {
     }
 
     private handleDirectionInput(direction: { x: number; y: number }) {
-        this.snake.setDirection(direction);
-        // Record input for replay (only in live play mode, not replay or auto)
-        if (!this.isReplayMode && !this.isAuto) {
+        const accepted = this.snake.setDirection(direction);
+        // Record input for replay only if direction was accepted (not a 180-degree turn)
+        // and only in live play mode, not replay or auto
+        if (accepted && !this.isReplayMode && !this.isAuto) {
+            const frame = this.replayRecorder.getCurrentFrame();
+            console.log(`[RECORD] Recording input at frame ${frame}:`, direction);
             this.replayRecorder.recordInput(direction);
         }
     }
@@ -299,10 +302,14 @@ export class Game {
     step() {
         // In replay mode, process replay inputs
         if (this.isReplayMode) {
-            this.replayPlayer.processFrame();
+            const frame = this.replayPlayer.getCurrentFrame();
+            const applied = this.replayPlayer.processFrame();
+            if (applied) {
+                console.log(`[REPLAY STEP] Frame ${frame}: Applied direction`, applied, `Snake nextDir:`, this.snake.nextDirection);
+            }
             this.replayPlayer.advanceFrame();
         } else {
-            // Record frame advance for live gameplay
+            // Record frame advance for live gameplay  
             this.replayRecorder.advanceFrame();
         }
 
@@ -467,6 +474,7 @@ export class Game {
 
         // Stop recording and save replay
         const replayData = this.replayRecorder.stopRecording(this.score);
+        console.log(`[RECORD] Game over. Recorded ${replayData.inputs.length} inputs:`, replayData.inputs);
         ReplayStorage.saveLastReplay(replayData);
         ReplayStorage.saveReplayToHistory(replayData);
 
@@ -567,6 +575,10 @@ export class Game {
 
         // Load replay into player
         this.replayPlayer.loadReplay(replayData);
+        console.log(`[REPLAY] Loaded replay with ${replayData.inputs.length} inputs:`, replayData.inputs);
+        if (replayData.inputs.length === 0) {
+            console.warn('[REPLAY] WARNING: No inputs in replay data! The snake will just go straight.');
+        }
         this.replayPlayer.startPlayback(
             (direction) => this.snake.setDirection(direction),
             () => this.onReplayComplete()

@@ -18,10 +18,11 @@ export class Snake {
         this.nextDirection = { x: 1, y: 0 };
     }
 
-    setDirection(dir: { x: number, y: number }) {
+    setDirection(dir: { x: number, y: number }): boolean {
         // Prevent 180 degree turns
-        if (this.direction.x + dir.x === 0 && this.direction.y + dir.y === 0) return;
+        if (this.direction.x + dir.x === 0 && this.direction.y + dir.y === 0) return false;
         this.nextDirection = dir;
+        return true;
     }
 
     move() {
