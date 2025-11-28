@@ -46,8 +46,13 @@ npm run preview
 - Use **Arrow Keys** to control the snake's direction
 - Eat food to grow longer and increase your score
 - Press **'A'** to toggle Auto Pilot mode (watch the AI play!)
+- Press **'P'** to pause/resume the game
 - Switch between **Dark**, **Light**, **Green**, **Red**, or **Blue** themes from the selector
 - Avoid hitting the walls or yourself
+- **Replay System** - Every game is automatically recorded and can be replayed from the history panel
+- **High Score Tracking** - Your best score is saved and displayed
+- **Special Food** - Occasionally appears for bonus points or special effects
+- **Obstacles** - Random obstacles appear to increase difficulty
 
 ## Game Structure
 
