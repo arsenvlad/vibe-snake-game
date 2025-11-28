@@ -55,6 +55,12 @@ export class Game {
         this.baseDropInterval = maxInterval - (clampedSpeed / 100) * (maxInterval - minInterval);
     }
 
+    setThickness(level: number) {
+        const clampedLevel = Math.max(1, Math.min(5, level));
+        this.renderer.setThickness(clampedLevel);
+        this.draw();
+    }
+
     private bindEvents() {
         window.addEventListener('keydown', (e) => {
             const arrowKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);

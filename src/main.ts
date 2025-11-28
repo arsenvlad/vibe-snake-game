@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const game = new Game(canvas);
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
   const speedSlider = document.getElementById('speed-slider') as HTMLInputElement | null;
+  const thicknessSlider = document.getElementById('thickness-slider') as HTMLInputElement | null;
 
   const startBtn = document.getElementById('start-btn');
   const restartBtn = document.getElementById('restart-btn');
@@ -30,6 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('vibe-snake-speed', clampedSpeed.toString());
   };
 
+  const applyThickness = (level: number) => {
+    const clampedLevel = Math.max(1, Math.min(5, level));
+    game.setThickness(clampedLevel);
+    localStorage.setItem('vibe-snake-thickness', clampedLevel.toString());
+  };
+
   const savedTheme = (localStorage.getItem('vibe-snake-theme') as ThemeName) || defaultTheme;
   applyTheme(savedTheme);
 
@@ -39,6 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
   applySpeed(initialSpeed);
   if (speedSlider) {
     speedSlider.value = initialSpeed.toString();
+  }
+
+  // Load saved thickness or default to 3 (medium)
+  const savedThickness = localStorage.getItem('vibe-snake-thickness');
+  const initialThickness = savedThickness ? parseInt(savedThickness, 10) : 3;
+  applyThickness(initialThickness);
+  if (thicknessSlider) {
+    thicknessSlider.value = initialThickness.toString();
   }
 
   startBtn?.addEventListener('click', () => {
@@ -59,5 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
   speedSlider?.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
     applySpeed(parseInt(target.value, 10));
+  });
+
+  thicknessSlider?.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement;
+    applyThickness(parseInt(target.value, 10));
   });
 });

@@ -216,6 +216,58 @@ canvas {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+.thickness-control {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--ui-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 8px 12px;
+  pointer-events: auto;
+  color: var(--text-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.thickness-control label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.thickness-control input[type="range"] {
+  width: 80px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-color);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.thickness-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--copilot-gradient);
+  cursor: pointer;
+  border: 2px solid var(--bg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.thickness-control input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--copilot-gradient);
+  cursor: pointer;
+  border: 2px solid var(--bg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 .score-board {
   display: flex;
   flex-direction: column;
