@@ -147,6 +147,12 @@ export class Renderer {
                 case 'temporary':
                     color = this.colors.obstacleTemporary;
                     break;
+                default: {
+                    // Exhaustiveness check - this should never happen
+                    const _exhaustiveCheck: never = obstacle.type;
+                    color = this.colors.obstacleStatic;
+                    console.warn(`Unknown obstacle type: ${_exhaustiveCheck}`);
+                }
             }
 
             this.ctx.fillStyle = color;

@@ -12,6 +12,11 @@ export interface ObstacleConfig {
     direction?: { x: number; y: number }; // For moving obstacles
 }
 
+// Constants for obstacle configuration
+const DEFAULT_TEMPORARY_DURATION = 50;
+const TEMPORARY_BASE_DURATION = 100;
+const TEMPORARY_DURATION_VARIANCE = 50;
+
 export class Obstacle {
     x: number;
     y: number;
@@ -29,7 +34,7 @@ export class Obstacle {
         this.x = config.position.x;
         this.y = config.position.y;
         this.type = config.type;
-        this.duration = config.type === 'temporary' ? (config.duration ?? 50) : -1;
+        this.duration = config.type === 'temporary' ? (config.duration ?? DEFAULT_TEMPORARY_DURATION) : -1;
         this.direction = config.direction ?? { x: 0, y: 0 };
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
@@ -136,7 +141,7 @@ export class ObstacleManager {
                 const config: ObstacleConfig = {
                     type,
                     position,
-                    duration: type === 'temporary' ? 100 + Math.floor(Math.random() * 50) : undefined,
+                    duration: type === 'temporary' ? TEMPORARY_BASE_DURATION + Math.floor(Math.random() * TEMPORARY_DURATION_VARIANCE) : undefined,
                     direction: type === 'moving' ? this.getRandomDirection() : undefined
                 };
                 this.obstacles.push(new Obstacle(config, this.gridWidth, this.gridHeight));
